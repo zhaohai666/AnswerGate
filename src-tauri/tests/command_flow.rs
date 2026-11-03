@@ -244,17 +244,34 @@ fn parent_unlock_verifies_sha256_hash() {
 
 #[test]
 fn seed_banks_load_through_app_state() {
-    // 真实种子题库（48 题）通过 AppState 全链路加载
+    // 真实种子题库（284 题）通过 AppState 全链路加载
     let dir = tempfile::tempdir().unwrap();
     let bank_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../resources/question_bank");
     let st = AppState::new(dir.path().to_path_buf(), &bank_dir).unwrap();
     assert_eq!(st.bank.len(), 284, "种子题库应为 68+106+110=284 题");
-    // 每学段均可抽满 5 题且题型混合
     for level in Level::ALL {
+        // 确定性断言 1：每学段题库三种题型均存在（不依赖随机抽题结果）
+        let pool = answergate_lib::quiz::filter_pool(&st.bank, level, None, None);
+        assert!(pool.len() >= 50, "学段 {:?} 题量不足", level);
+        for t in [
+            QuestionType::SingleChoice,
+            QuestionType::TrueFalse,
+            QuestionType::FillBlank,
+        ] {
+            assert!(
+                pool.iter().any(|q| q.qtype == t),
+                "学段 {:?} 缺少题型 {:?}",
+                level,
+                t
+            );
+        }
+        // 确定性断言 2：抽 5 题数量正确且 id 互不重复（去重，与抽中哪些题无关）
         let paper = answergate_lib::quiz::make_paper(&st.bank, level, 5, false).unwrap();
         assert_eq!(paper.questions.len(), 5);
-        assert!(paper.questions.iter().any(|q| q.qtype == QuestionType::SingleChoice));
-        assert!(paper.questions.iter().any(|q| q.qtype != QuestionType::SingleChoice));
+        let mut ids: Vec<&str> = paper.questions.iter().map(|q| q.id.as_str()).collect();
+        ids.sort_unstable();
+        ids.dedup();
+        assert_eq!(ids.len(), 5, "学段 {:?} 抽题出现重复 id", level);
     }
 }
