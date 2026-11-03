@@ -52,3 +52,70 @@ pub fn load_or_default(path: &Path) -> AppConfig {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::model::{Level, QuizConfig};
+
+    fn write_tmp(content: &str) -> (tempfile::TempDir, std::path::PathBuf) {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("config.toml");
+        std::fs::write(&path, content).unwrap();
+        (dir, path)
+    }
+
+    #[test]
+    fn missing_file_falls_back_to_defaults() {
+        let dir = tempfile::tempdir().unwrap();
+        let cfg = load_or_default(&dir.path().join("no_such_config.toml"));
+        assert_eq!(cfg.quiz, QuizConfig::default());
+        assert!(cfg.target_apps.is_empty());
+    }
+
+    #[test]
+    fn missing_fields_fall_back_to_defaults() {
+        let (_d, path) = write_tmp("[quiz]\nquestion_count = 10\n");
+        let cfg = load_or_default(&path);
+        assert_eq!(cfg.quiz.question_count, 10);
+        assert_eq!(cfg.quiz.pass_score, 0.8);
+        assert_eq!(cfg.quiz.max_retry, 2);
+        assert_eq!(cfg.quiz.cool_down_sec, 120);
+        assert_eq!(cfg.quiz.default_level, Level::Primary);
+    }
+
+    #[test]
+    fn invalid_values_are_sanitized() {
+        let (_d, path) =
+            write_tmp("[quiz]\nquestion_count = 0\npass_score = 1.5\ncool_down_sec = 0\n");
+        let cfg = load_or_default(&path);
+        assert_eq!(cfg.quiz.question_count, 5);
+        assert_eq!(cfg.quiz.pass_score, 0.8);
+        assert_eq!(cfg.quiz.cool_down_sec, 120);
+    }
+
+    #[test]
+    fn malformed_toml_falls_back_to_defaults() {
+        let (_d, path) = write_tmp("[quiz\nbroken===");
+        let cfg = load_or_default(&path);
+        assert_eq!(cfg.quiz, QuizConfig::default());
+    }
+
+    #[test]
+    fn targets_parsed_and_deduped() {
+        let (_d, path) = write_tmp(
+            r#"
+            [[target_apps]]
+            id = "a"
+            name = "AppA"
+            mac = "/Applications/A.app"
+            [[target_apps]]
+            id = "a"
+            name = "AppA-dup"
+            "#,
+        );
+        let cfg = load_or_default(&path);
+        assert_eq!(cfg.target_apps.len(), 1);
+        assert_eq!(cfg.target_apps[0].name, "AppA");
+    }
+}
