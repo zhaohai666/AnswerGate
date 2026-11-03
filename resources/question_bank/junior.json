@@ -1,18 +1,1452 @@
 [
-  { "id": "j_001", "level": "junior", "grade": null, "subject": "math", "type": "single_choice", "title": "方程 x²=9 的解是？", "options": ["x=3", "x=±3", "x=9"], "answer": "x=±3", "hint": "注意负数解" },
-  { "id": "j_002", "level": "junior", "grade": null, "subject": "math", "type": "single_choice", "title": "直角三角形两条直角边分别为3和4，斜边长是？", "options": ["5", "6", "7"], "answer": "5", "hint": "勾股定理" },
-  { "id": "j_003", "level": "junior", "grade": null, "subject": "physics", "type": "single_choice", "title": "水的密度是多少？", "options": ["1.0g/cm³", "0.8g/cm³", "13.6g/cm³"], "answer": "1.0g/cm³", "hint": null },
-  { "id": "j_004", "level": "junior", "grade": null, "subject": "physics", "type": "single_choice", "title": "光在真空中的传播速度约为？", "options": ["3×10⁸m/s", "3×10⁶m/s", "3×10¹⁰m/s"], "answer": "3×10⁸m/s", "hint": null },
-  { "id": "j_005", "level": "junior", "grade": null, "subject": "chemistry", "type": "single_choice", "title": "水的化学式是？", "options": ["H₂O", "CO₂", "O₂"], "answer": "H₂O", "hint": null },
-  { "id": "j_006", "level": "junior", "grade": null, "subject": "chemistry", "type": "single_choice", "title": "元素符号 Fe 表示哪种元素？", "options": ["铁", "铜", "锌"], "answer": "铁", "hint": null },
-  { "id": "j_007", "level": "junior", "grade": null, "subject": "biology", "type": "single_choice", "title": "人体进行气体交换（呼吸）的主要器官是？", "options": ["肺", "心脏", "肝脏"], "answer": "肺", "hint": null },
-  { "id": "j_008", "level": "junior", "grade": null, "subject": "biology", "type": "single_choice", "title": "细胞是生物体结构和功能的什么？", "options": ["基本单位", "最大单位", "附属结构"], "answer": "基本单位", "hint": null },
-  { "id": "j_009", "level": "junior", "grade": null, "subject": "history", "type": "single_choice", "title": "中国人民抗日战争胜利是在哪一年？", "options": ["1945年", "1937年", "1949年"], "answer": "1945年", "hint": null },
-  { "id": "j_010", "level": "junior", "grade": null, "subject": "geography", "type": "single_choice", "title": "地球上面积最大的大洋是？", "options": ["太平洋", "大西洋", "印度洋"], "answer": "太平洋", "hint": null },
-  { "id": "j_011", "level": "junior", "grade": null, "subject": "physics", "type": "true_false", "title": "声音可以在真空中传播。", "options": [], "answer": "错", "hint": "声音传播需要介质" },
-  { "id": "j_012", "level": "junior", "grade": null, "subject": "history", "type": "true_false", "title": "秦朝是中国历史上第一个统一的中央集权王朝。", "options": [], "answer": "对", "hint": null },
-  { "id": "j_013", "level": "junior", "grade": null, "subject": "chemistry", "type": "fill_blank", "title": "氧气的化学式是 O₂，其中下标的数字是几？（填数字）", "options": [], "answer": "2|二", "hint": null },
-  { "id": "j_014", "level": "junior", "grade": null, "subject": "math", "type": "fill_blank", "title": "-3的绝对值是多少？", "options": [], "answer": "3", "hint": null },
-  { "id": "j_015", "level": "junior", "grade": null, "subject": "english", "type": "fill_blank", "title": "book 的复数形式是？（写英文）", "options": [], "answer": "books", "hint": null },
-  { "id": "j_016", "level": "junior", "grade": null, "subject": "chinese", "type": "fill_blank", "title": "“会当凌绝顶”的下一句是什么？", "options": [], "answer": "一览众山小", "hint": null }
+ {
+  "id": "j_001",
+  "level": "junior",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "方程 x²=9 的解是？",
+  "options": [
+   "x=3",
+   "x=±3",
+   "x=9"
+  ],
+  "answer": "x=±3",
+  "hint": "注意负数解"
+ },
+ {
+  "id": "j_002",
+  "level": "junior",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "直角三角形两条直角边分别为3和4，斜边长是？",
+  "options": [
+   "5",
+   "6",
+   "7"
+  ],
+  "answer": "5",
+  "hint": "勾股定理"
+ },
+ {
+  "id": "j_003",
+  "level": "junior",
+  "grade": null,
+  "subject": "physics",
+  "type": "single_choice",
+  "title": "水的密度是多少？",
+  "options": [
+   "1.0g/cm³",
+   "0.8g/cm³",
+   "13.6g/cm³"
+  ],
+  "answer": "1.0g/cm³",
+  "hint": null
+ },
+ {
+  "id": "j_004",
+  "level": "junior",
+  "grade": null,
+  "subject": "physics",
+  "type": "single_choice",
+  "title": "光在真空中的传播速度约为？",
+  "options": [
+   "3×10⁸m/s",
+   "3×10⁶m/s",
+   "3×10¹⁰m/s"
+  ],
+  "answer": "3×10⁸m/s",
+  "hint": null
+ },
+ {
+  "id": "j_005",
+  "level": "junior",
+  "grade": null,
+  "subject": "chemistry",
+  "type": "single_choice",
+  "title": "水的化学式是？",
+  "options": [
+   "H₂O",
+   "CO₂",
+   "O₂"
+  ],
+  "answer": "H₂O",
+  "hint": null
+ },
+ {
+  "id": "j_006",
+  "level": "junior",
+  "grade": null,
+  "subject": "chemistry",
+  "type": "single_choice",
+  "title": "元素符号 Fe 表示哪种元素？",
+  "options": [
+   "铁",
+   "铜",
+   "锌"
+  ],
+  "answer": "铁",
+  "hint": null
+ },
+ {
+  "id": "j_007",
+  "level": "junior",
+  "grade": null,
+  "subject": "biology",
+  "type": "single_choice",
+  "title": "人体进行气体交换（呼吸）的主要器官是？",
+  "options": [
+   "肺",
+   "心脏",
+   "肝脏"
+  ],
+  "answer": "肺",
+  "hint": null
+ },
+ {
+  "id": "j_008",
+  "level": "junior",
+  "grade": null,
+  "subject": "biology",
+  "type": "single_choice",
+  "title": "细胞是生物体结构和功能的什么？",
+  "options": [
+   "基本单位",
+   "最大单位",
+   "附属结构"
+  ],
+  "answer": "基本单位",
+  "hint": null
+ },
+ {
+  "id": "j_009",
+  "level": "junior",
+  "grade": null,
+  "subject": "history",
+  "type": "single_choice",
+  "title": "中国人民抗日战争胜利是在哪一年？",
+  "options": [
+   "1945年",
+   "1937年",
+   "1949年"
+  ],
+  "answer": "1945年",
+  "hint": null
+ },
+ {
+  "id": "j_010",
+  "level": "junior",
+  "grade": null,
+  "subject": "geography",
+  "type": "single_choice",
+  "title": "地球上面积最大的大洋是？",
+  "options": [
+   "太平洋",
+   "大西洋",
+   "印度洋"
+  ],
+  "answer": "太平洋",
+  "hint": null
+ },
+ {
+  "id": "j_011",
+  "level": "junior",
+  "grade": null,
+  "subject": "physics",
+  "type": "true_false",
+  "title": "声音可以在真空中传播。",
+  "options": [],
+  "answer": "错",
+  "hint": "声音传播需要介质"
+ },
+ {
+  "id": "j_012",
+  "level": "junior",
+  "grade": null,
+  "subject": "history",
+  "type": "true_false",
+  "title": "秦朝是中国历史上第一个统一的中央集权王朝。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "j_013",
+  "level": "junior",
+  "grade": null,
+  "subject": "chemistry",
+  "type": "fill_blank",
+  "title": "氧气的化学式是 O₂，其中下标的数字是几？（填数字）",
+  "options": [],
+  "answer": "2|二",
+  "hint": null
+ },
+ {
+  "id": "j_014",
+  "level": "junior",
+  "grade": null,
+  "subject": "math",
+  "type": "fill_blank",
+  "title": "-3的绝对值是多少？",
+  "options": [],
+  "answer": "3",
+  "hint": null
+ },
+ {
+  "id": "j_015",
+  "level": "junior",
+  "grade": null,
+  "subject": "english",
+  "type": "fill_blank",
+  "title": "book 的复数形式是？（写英文）",
+  "options": [],
+  "answer": "books",
+  "hint": null
+ },
+ {
+  "id": "j_016",
+  "level": "junior",
+  "grade": null,
+  "subject": "chinese",
+  "type": "fill_blank",
+  "title": "“会当凌绝顶”的下一句是什么？",
+  "options": [],
+  "answer": "一览众山小",
+  "hint": null
+ },
+ {
+  "id": "j_017",
+  "level": "junior",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "-5 + 8 = ？",
+  "options": [
+   "3",
+   "-3",
+   "13"
+  ],
+  "answer": "3",
+  "hint": null
+ },
+ {
+  "id": "j_018",
+  "level": "junior",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "平行四边形的面积公式是？",
+  "options": [
+   "底×高",
+   "底×高÷2",
+   "(底+高)×2"
+  ],
+  "answer": "底×高",
+  "hint": null
+ },
+ {
+  "id": "j_019",
+  "level": "junior",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "2⁵ 等于多少？",
+  "options": [
+   "10",
+   "32",
+   "25"
+  ],
+  "answer": "32",
+  "hint": null
+ },
+ {
+  "id": "j_020",
+  "level": "junior",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "袋子里有3个红球、2个白球，摸到红球的概率是？",
+  "options": [
+   "3/5",
+   "2/5",
+   "1/2"
+  ],
+  "answer": "3/5",
+  "hint": null
+ },
+ {
+  "id": "j_021",
+  "level": "junior",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "圆的半径是3（π取3.14），圆的面积是多少？",
+  "options": [
+   "28.26",
+   "18.84",
+   "9.42"
+  ],
+  "answer": "28.26",
+  "hint": null
+ },
+ {
+  "id": "j_022",
+  "level": "junior",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "函数 y=2x+1 中，当 x=3 时 y 等于多少？",
+  "options": [
+   "7",
+   "6",
+   "5"
+  ],
+  "answer": "7",
+  "hint": null
+ },
+ {
+  "id": "j_023",
+  "level": "junior",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "不等式 2x > 10 的解集是？",
+  "options": [
+   "x>5",
+   "x<5",
+   "x>20"
+  ],
+  "answer": "x>5",
+  "hint": null
+ },
+ {
+  "id": "j_024",
+  "level": "junior",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "16 的算术平方根是多少？",
+  "options": [
+   "4",
+   "±4",
+   "8"
+  ],
+  "answer": "4",
+  "hint": null
+ },
+ {
+  "id": "j_025",
+  "level": "junior",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "数据 2、3、5、6 的平均数是多少？",
+  "options": [
+   "4",
+   "3.5",
+   "5"
+  ],
+  "answer": "4",
+  "hint": null
+ },
+ {
+  "id": "j_026",
+  "level": "junior",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "三角形两边长为3和7，第三边可能是多少？",
+  "options": [
+   "4",
+   "9",
+   "10"
+  ],
+  "answer": "9",
+  "hint": "第三边大于两边之差、小于两边之和"
+ },
+ {
+  "id": "j_027",
+  "level": "junior",
+  "grade": null,
+  "subject": "math",
+  "type": "true_false",
+  "title": "在实数范围内，负数没有平方根。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "j_028",
+  "level": "junior",
+  "grade": null,
+  "subject": "math",
+  "type": "true_false",
+  "title": "两直线平行，同位角相等。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "j_029",
+  "level": "junior",
+  "grade": null,
+  "subject": "math",
+  "type": "true_false",
+  "title": "所有的矩形都是正方形。",
+  "options": [],
+  "answer": "错",
+  "hint": "正方形是特殊矩形"
+ },
+ {
+  "id": "j_030",
+  "level": "junior",
+  "grade": null,
+  "subject": "math",
+  "type": "true_false",
+  "title": "半径为 r 的圆，周长是 2πr。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "j_031",
+  "level": "junior",
+  "grade": null,
+  "subject": "math",
+  "type": "fill_blank",
+  "title": "分解因式：x²-1 = (x+1)×____",
+  "options": [],
+  "answer": "x-1",
+  "hint": null
+ },
+ {
+  "id": "j_032",
+  "level": "junior",
+  "grade": null,
+  "subject": "math",
+  "type": "fill_blank",
+  "title": "方程 3x-6=0 的解是 x=____",
+  "options": [],
+  "answer": "2",
+  "hint": null
+ },
+ {
+  "id": "j_033",
+  "level": "junior",
+  "grade": null,
+  "subject": "math",
+  "type": "fill_blank",
+  "title": "数据 1、2、3、4、5 的中位数是____",
+  "options": [],
+  "answer": "3",
+  "hint": null
+ },
+ {
+  "id": "j_034",
+  "level": "junior",
+  "grade": null,
+  "subject": "math",
+  "type": "fill_blank",
+  "title": "直径为10的圆，半径是____",
+  "options": [],
+  "answer": "5",
+  "hint": null
+ },
+ {
+  "id": "j_035",
+  "level": "junior",
+  "grade": null,
+  "subject": "chinese",
+  "type": "single_choice",
+  "title": "散文《背影》的作者是谁？",
+  "options": [
+   "朱自清",
+   "老舍",
+   "鲁迅"
+  ],
+  "answer": "朱自清",
+  "hint": null
+ },
+ {
+  "id": "j_036",
+  "level": "junior",
+  "grade": null,
+  "subject": "chinese",
+  "type": "single_choice",
+  "title": "“但愿人长久，千里共婵娟”中的“婵娟”指什么？",
+  "options": [
+   "月亮",
+   "太阳",
+   "星星"
+  ],
+  "answer": "月亮",
+  "hint": null
+ },
+ {
+  "id": "j_037",
+  "level": "junior",
+  "grade": null,
+  "subject": "chinese",
+  "type": "single_choice",
+  "title": "《从百草园到三味书屋》选自鲁迅的哪部作品？",
+  "options": [
+   "《朝花夕拾》",
+   "《呐喊》",
+   "《彷徨》"
+  ],
+  "answer": "《朝花夕拾》",
+  "hint": null
+ },
+ {
+  "id": "j_038",
+  "level": "junior",
+  "grade": null,
+  "subject": "chinese",
+  "type": "single_choice",
+  "title": "成语“世外桃源”出自哪篇文章？",
+  "options": [
+   "《桃花源记》",
+   "《岳阳楼记》",
+   "《醉翁亭记》"
+  ],
+  "answer": "《桃花源记》",
+  "hint": null
+ },
+ {
+  "id": "j_039",
+  "level": "junior",
+  "grade": null,
+  "subject": "chinese",
+  "type": "single_choice",
+  "title": "下列谁属于“唐宋八大家”？",
+  "options": [
+   "韩愈",
+   "李白",
+   "辛弃疾"
+  ],
+  "answer": "韩愈",
+  "hint": null
+ },
+ {
+  "id": "j_040",
+  "level": "junior",
+  "grade": null,
+  "subject": "chinese",
+  "type": "single_choice",
+  "title": "《红楼梦》的作者是谁？",
+  "options": [
+   "曹雪芹",
+   "罗贯中",
+   "施耐庵"
+  ],
+  "answer": "曹雪芹",
+  "hint": null
+ },
+ {
+  "id": "j_041",
+  "level": "junior",
+  "grade": null,
+  "subject": "chinese",
+  "type": "true_false",
+  "title": "“先天下之忧而忧，后天下之乐而乐”出自《岳阳楼记》。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "j_042",
+  "level": "junior",
+  "grade": null,
+  "subject": "chinese",
+  "type": "true_false",
+  "title": "《木兰诗》是唐代文人创作的浪漫主义诗歌。",
+  "options": [],
+  "answer": "错",
+  "hint": "是北朝民歌"
+ },
+ {
+  "id": "j_043",
+  "level": "junior",
+  "grade": null,
+  "subject": "chinese",
+  "type": "true_false",
+  "title": "写对联讲究上下联字数相等、词性相对。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "j_044",
+  "level": "junior",
+  "grade": null,
+  "subject": "chinese",
+  "type": "fill_blank",
+  "title": "“海内存知己”的下一句是什么？",
+  "options": [],
+  "answer": "天涯若比邻",
+  "hint": null
+ },
+ {
+  "id": "j_045",
+  "level": "junior",
+  "grade": null,
+  "subject": "chinese",
+  "type": "fill_blank",
+  "title": "《出师表》的作者是____。",
+  "options": [],
+  "answer": "诸葛亮|孔明",
+  "hint": null
+ },
+ {
+  "id": "j_046",
+  "level": "junior",
+  "grade": null,
+  "subject": "chinese",
+  "type": "fill_blank",
+  "title": "“落霞与孤鹜齐飞”的下一句是什么？",
+  "options": [],
+  "answer": "秋水共长天一色",
+  "hint": null
+ },
+ {
+  "id": "j_047",
+  "level": "junior",
+  "grade": null,
+  "subject": "english",
+  "type": "single_choice",
+  "title": "library 的中文意思是？",
+  "options": [
+   "图书馆",
+   "实验室",
+   "书店"
+  ],
+  "answer": "图书馆",
+  "hint": null
+ },
+ {
+  "id": "j_048",
+  "level": "junior",
+  "grade": null,
+  "subject": "english",
+  "type": "single_choice",
+  "title": "go 的过去式是什么？",
+  "options": [
+   "went",
+   "goed",
+   "gone"
+  ],
+  "answer": "went",
+  "hint": null
+ },
+ {
+  "id": "j_049",
+  "level": "junior",
+  "grade": null,
+  "subject": "english",
+  "type": "single_choice",
+  "title": "下面哪句话是正确的？",
+  "options": [
+   "He is a student.",
+   "He are a student.",
+   "He am a student."
+  ],
+  "answer": "He is a student.",
+  "hint": null
+ },
+ {
+  "id": "j_050",
+  "level": "junior",
+  "grade": null,
+  "subject": "english",
+  "type": "single_choice",
+  "title": "basketball 的中文意思是？",
+  "options": [
+   "篮球",
+   "足球",
+   "排球"
+  ],
+  "answer": "篮球",
+  "hint": null
+ },
+ {
+  "id": "j_051",
+  "level": "junior",
+  "grade": null,
+  "subject": "english",
+  "type": "single_choice",
+  "title": "cheap（便宜的）的反义词是？",
+  "options": [
+   "expensive",
+   "small",
+   "light"
+  ],
+  "answer": "expensive",
+  "hint": null
+ },
+ {
+  "id": "j_052",
+  "level": "junior",
+  "grade": null,
+  "subject": "english",
+  "type": "single_choice",
+  "title": "一周有几天？（英语课上学的）",
+  "options": [
+   "Six",
+   "Seven",
+   "Eight"
+  ],
+  "answer": "Seven",
+  "hint": null
+ },
+ {
+  "id": "j_053",
+  "level": "junior",
+  "grade": null,
+  "subject": "english",
+  "type": "true_false",
+  "title": "“an apple”用 an，是因为 apple 以元音音素开头。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "j_054",
+  "level": "junior",
+  "grade": null,
+  "subject": "english",
+  "type": "true_false",
+  "title": "英语句子开头的第一个字母通常要大写。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "j_055",
+  "level": "junior",
+  "grade": null,
+  "subject": "english",
+  "type": "true_false",
+  "title": "“She like music.”这句话是正确的。",
+  "options": [],
+  "answer": "错",
+  "hint": "第三人称单数要用 likes"
+ },
+ {
+  "id": "j_056",
+  "level": "junior",
+  "grade": null,
+  "subject": "english",
+  "type": "fill_blank",
+  "title": "“一月”的英文单词是？（写英文）",
+  "options": [],
+  "answer": "january|January",
+  "hint": null
+ },
+ {
+  "id": "j_057",
+  "level": "junior",
+  "grade": null,
+  "subject": "english",
+  "type": "fill_blank",
+  "title": "good 的比较级是？（写英文）",
+  "options": [],
+  "answer": "better",
+  "hint": null
+ },
+ {
+  "id": "j_058",
+  "level": "junior",
+  "grade": null,
+  "subject": "english",
+  "type": "fill_blank",
+  "title": "Saturday 和 Sunday 合起来叫什么？（写英文）",
+  "options": [],
+  "answer": "weekend|weekends",
+  "hint": null
+ },
+ {
+  "id": "j_059",
+  "level": "junior",
+  "grade": null,
+  "subject": "physics",
+  "type": "single_choice",
+  "title": "用力拉弹簧，弹簧变长了。这说明力可以改变物体的什么？",
+  "options": [
+   "形状",
+   "颜色",
+   "质量"
+  ],
+  "answer": "形状",
+  "hint": null
+ },
+ {
+  "id": "j_060",
+  "level": "junior",
+  "grade": null,
+  "subject": "physics",
+  "type": "single_choice",
+  "title": "下面哪种材料是导体？",
+  "options": [
+   "铜",
+   "橡胶",
+   "玻璃"
+  ],
+  "answer": "铜",
+  "hint": null
+ },
+ {
+  "id": "j_061",
+  "level": "junior",
+  "grade": null,
+  "subject": "physics",
+  "type": "single_choice",
+  "title": "中国家庭电路的电压是多少伏？",
+  "options": [
+   "220V",
+   "110V",
+   "36V"
+  ],
+  "answer": "220V",
+  "hint": null
+ },
+ {
+  "id": "j_062",
+  "level": "junior",
+  "grade": null,
+  "subject": "physics",
+  "type": "single_choice",
+  "title": "声音的三要素不包括下面哪一项？",
+  "options": [
+   "音调",
+   "响度",
+   "颜色"
+  ],
+  "answer": "颜色",
+  "hint": null
+ },
+ {
+  "id": "j_063",
+  "level": "junior",
+  "grade": null,
+  "subject": "physics",
+  "type": "single_choice",
+  "title": "光从空气斜射入水中时会发生什么？",
+  "options": [
+   "折射",
+   "传播速度变快",
+   "不发生任何变化"
+  ],
+  "answer": "折射",
+  "hint": null
+ },
+ {
+  "id": "j_064",
+  "level": "junior",
+  "grade": null,
+  "subject": "physics",
+  "type": "single_choice",
+  "title": "重力的方向总是怎样的？",
+  "options": [
+   "竖直向下",
+   "向上",
+   "水平方向"
+  ],
+  "answer": "竖直向下",
+  "hint": null
+ },
+ {
+  "id": "j_065",
+  "level": "junior",
+  "grade": null,
+  "subject": "physics",
+  "type": "true_false",
+  "title": "串联电路中电流处处相等。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "j_066",
+  "level": "junior",
+  "grade": null,
+  "subject": "physics",
+  "type": "true_false",
+  "title": "物体温度越高，内部分子热运动越剧烈。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "j_067",
+  "level": "junior",
+  "grade": null,
+  "subject": "physics",
+  "type": "true_false",
+  "title": "凸透镜对光线有发散作用。",
+  "options": [],
+  "answer": "错",
+  "hint": "凸透镜会聚光线"
+ },
+ {
+  "id": "j_068",
+  "level": "junior",
+  "grade": null,
+  "subject": "physics",
+  "type": "true_false",
+  "title": "1千瓦时就是我们常说的1度电。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "j_069",
+  "level": "junior",
+  "grade": null,
+  "subject": "physics",
+  "type": "fill_blank",
+  "title": "标准大气压下水的沸点是（填数字）摄氏度。",
+  "options": [],
+  "answer": "100|一百",
+  "hint": null
+ },
+ {
+  "id": "j_070",
+  "level": "junior",
+  "grade": null,
+  "subject": "physics",
+  "type": "fill_blank",
+  "title": "电流的单位是____（填中文名称）。",
+  "options": [],
+  "answer": "安培|安",
+  "hint": null
+ },
+ {
+  "id": "j_071",
+  "level": "junior",
+  "grade": null,
+  "subject": "chemistry",
+  "type": "single_choice",
+  "title": "下面属于化学变化的是？",
+  "options": [
+   "铁生锈",
+   "冰融化",
+   "酒精挥发"
+  ],
+  "answer": "铁生锈",
+  "hint": null
+ },
+ {
+  "id": "j_072",
+  "level": "junior",
+  "grade": null,
+  "subject": "chemistry",
+  "type": "single_choice",
+  "title": "空气中含量最多的气体是？",
+  "options": [
+   "氮气",
+   "氧气",
+   "二氧化碳"
+  ],
+  "answer": "氮气",
+  "hint": null
+ },
+ {
+  "id": "j_073",
+  "level": "junior",
+  "grade": null,
+  "subject": "chemistry",
+  "type": "single_choice",
+  "title": "pH小于7的溶液呈什么性？",
+  "options": [
+   "酸性",
+   "碱性",
+   "中性"
+  ],
+  "answer": "酸性",
+  "hint": null
+ },
+ {
+  "id": "j_074",
+  "level": "junior",
+  "grade": null,
+  "subject": "chemistry",
+  "type": "single_choice",
+  "title": "金刚石和石墨都是由哪种元素组成的？",
+  "options": [
+   "碳",
+   "氧",
+   "硅"
+  ],
+  "answer": "碳",
+  "hint": null
+ },
+ {
+  "id": "j_075",
+  "level": "junior",
+  "grade": null,
+  "subject": "chemistry",
+  "type": "single_choice",
+  "title": "化学式 CO₂ 表示什么物质？",
+  "options": [
+   "二氧化碳",
+   "一氧化碳",
+   "氧气"
+  ],
+  "answer": "二氧化碳",
+  "hint": null
+ },
+ {
+  "id": "j_076",
+  "level": "junior",
+  "grade": null,
+  "subject": "chemistry",
+  "type": "single_choice",
+  "title": "铁在潮湿的空气中生锈，主要是铁与什么发生了反应？",
+  "options": [
+   "氧气和水",
+   "氮气",
+   "二氧化碳"
+  ],
+  "answer": "氧气和水",
+  "hint": null
+ },
+ {
+  "id": "j_077",
+  "level": "junior",
+  "grade": null,
+  "subject": "chemistry",
+  "type": "true_false",
+  "title": "分子是保持物质化学性质的最小粒子。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "j_078",
+  "level": "junior",
+  "grade": null,
+  "subject": "chemistry",
+  "type": "true_false",
+  "title": "水是由氢气和氧气组成的。",
+  "options": [],
+  "answer": "错",
+  "hint": "水由氢元素和氧元素组成"
+ },
+ {
+  "id": "j_079",
+  "level": "junior",
+  "grade": null,
+  "subject": "chemistry",
+  "type": "true_false",
+  "title": "催化剂在化学反应前后的质量不变。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "j_080",
+  "level": "junior",
+  "grade": null,
+  "subject": "chemistry",
+  "type": "true_false",
+  "title": "金属元素在化学反应中一般容易失去电子。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "j_081",
+  "level": "junior",
+  "grade": null,
+  "subject": "chemistry",
+  "type": "fill_blank",
+  "title": "氢气的化学式是____（用元素符号写）。",
+  "options": [],
+  "answer": "H₂|H2",
+  "hint": null
+ },
+ {
+  "id": "j_082",
+  "level": "junior",
+  "grade": null,
+  "subject": "chemistry",
+  "type": "fill_blank",
+  "title": "稀释浓硫酸时，应把____慢慢倒入水中（填物质名称）。",
+  "options": [],
+  "answer": "浓硫酸|硫酸",
+  "hint": null
+ },
+ {
+  "id": "j_083",
+  "level": "junior",
+  "grade": null,
+  "subject": "biology",
+  "type": "single_choice",
+  "title": "植物进行光合作用的主要器官是？",
+  "options": [
+   "叶",
+   "根",
+   "茎"
+  ],
+  "answer": "叶",
+  "hint": null
+ },
+ {
+  "id": "j_084",
+  "level": "junior",
+  "grade": null,
+  "subject": "biology",
+  "type": "single_choice",
+  "title": "人体最大的消化腺是什么？",
+  "options": [
+   "肝脏",
+   "胃",
+   "胰腺"
+  ],
+  "answer": "肝脏",
+  "hint": null
+ },
+ {
+  "id": "j_085",
+  "level": "junior",
+  "grade": null,
+  "subject": "biology",
+  "type": "single_choice",
+  "title": "血液中负责运输氧气的是哪种细胞？",
+  "options": [
+   "红细胞",
+   "白细胞",
+   "血小板"
+  ],
+  "answer": "红细胞",
+  "hint": null
+ },
+ {
+  "id": "j_086",
+  "level": "junior",
+  "grade": null,
+  "subject": "biology",
+  "type": "single_choice",
+  "title": "生态系统中属于“生产者”的是？",
+  "options": [
+   "绿色植物",
+   "兔子",
+   "细菌"
+  ],
+  "answer": "绿色植物",
+  "hint": null
+ },
+ {
+  "id": "j_087",
+  "level": "junior",
+  "grade": null,
+  "subject": "biology",
+  "type": "true_false",
+  "title": "DNA 是主要的遗传物质。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "j_088",
+  "level": "junior",
+  "grade": null,
+  "subject": "biology",
+  "type": "true_false",
+  "title": "植物在夜间也进行呼吸作用。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "j_089",
+  "level": "junior",
+  "grade": null,
+  "subject": "biology",
+  "type": "true_false",
+  "title": "人体的运动只靠骨骼就够了，不需要肌肉。",
+  "options": [],
+  "answer": "错",
+  "hint": "需要肌肉牵拉"
+ },
+ {
+  "id": "j_090",
+  "level": "junior",
+  "grade": null,
+  "subject": "biology",
+  "type": "fill_blank",
+  "title": "人体生命活动的基本结构单位是____。",
+  "options": [],
+  "answer": "细胞",
+  "hint": null
+ },
+ {
+  "id": "j_091",
+  "level": "junior",
+  "grade": null,
+  "subject": "history",
+  "type": "single_choice",
+  "title": "中国历史上第一个王朝是？",
+  "options": [
+   "夏朝",
+   "商朝",
+   "周朝"
+  ],
+  "answer": "夏朝",
+  "hint": null
+ },
+ {
+  "id": "j_092",
+  "level": "junior",
+  "grade": null,
+  "subject": "history",
+  "type": "single_choice",
+  "title": "指南针、造纸术、印刷术、火药合称为什么？",
+  "options": [
+   "四大发明",
+   "四大名著",
+   "四大工程"
+  ],
+  "answer": "四大发明",
+  "hint": null
+ },
+ {
+  "id": "j_093",
+  "level": "junior",
+  "grade": null,
+  "subject": "history",
+  "type": "single_choice",
+  "title": "郑和下西洋发生在哪个朝代？",
+  "options": [
+   "明朝",
+   "唐朝",
+   "宋朝"
+  ],
+  "answer": "明朝",
+  "hint": null
+ },
+ {
+  "id": "j_094",
+  "level": "junior",
+  "grade": null,
+  "subject": "history",
+  "type": "single_choice",
+  "title": "第一次工业革命最先开始于哪个国家？",
+  "options": [
+   "英国",
+   "法国",
+   "美国"
+  ],
+  "answer": "英国",
+  "hint": null
+ },
+ {
+  "id": "j_095",
+  "level": "junior",
+  "grade": null,
+  "subject": "history",
+  "type": "true_false",
+  "title": "秦始皇统一六国后，统一了文字和货币。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "j_096",
+  "level": "junior",
+  "grade": null,
+  "subject": "history",
+  "type": "true_false",
+  "title": "唐太宗李世民使用的年号是“开元”。",
+  "options": [],
+  "answer": "错",
+  "hint": "是贞观"
+ },
+ {
+  "id": "j_097",
+  "level": "junior",
+  "grade": null,
+  "subject": "history",
+  "type": "fill_blank",
+  "title": "《史记》的作者是____。",
+  "options": [],
+  "answer": "司马迁",
+  "hint": null
+ },
+ {
+  "id": "j_098",
+  "level": "junior",
+  "grade": null,
+  "subject": "history",
+  "type": "fill_blank",
+  "title": "中华人民共和国成立于____年（填数字）。",
+  "options": [],
+  "answer": "1949",
+  "hint": null
+ },
+ {
+  "id": "j_099",
+  "level": "junior",
+  "grade": null,
+  "subject": "geography",
+  "type": "single_choice",
+  "title": "中国最长的河流是？",
+  "options": [
+   "长江",
+   "黄河",
+   "珠江"
+  ],
+  "answer": "长江",
+  "hint": null
+ },
+ {
+  "id": "j_100",
+  "level": "junior",
+  "grade": null,
+  "subject": "geography",
+  "type": "single_choice",
+  "title": "世界上最高的山峰是？",
+  "options": [
+   "珠穆朗玛峰",
+   "富士山",
+   "乞力马扎罗山"
+  ],
+  "answer": "珠穆朗玛峰",
+  "hint": null
+ },
+ {
+  "id": "j_101",
+  "level": "junior",
+  "grade": null,
+  "subject": "geography",
+  "type": "single_choice",
+  "title": "中国面积最大的省级行政区是？",
+  "options": [
+   "新疆",
+   "西藏",
+   "内蒙古"
+  ],
+  "answer": "新疆",
+  "hint": null
+ },
+ {
+  "id": "j_102",
+  "level": "junior",
+  "grade": null,
+  "subject": "geography",
+  "type": "single_choice",
+  "title": "地球自转一周大约需要多长时间？",
+  "options": [
+   "24小时",
+   "12小时",
+   "48小时"
+  ],
+  "answer": "24小时",
+  "hint": null
+ },
+ {
+  "id": "j_103",
+  "level": "junior",
+  "grade": null,
+  "subject": "geography",
+  "type": "true_false",
+  "title": "中国位于北半球。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "j_104",
+  "level": "junior",
+  "grade": null,
+  "subject": "geography",
+  "type": "true_false",
+  "title": "地图比例尺越大，表示的实际范围越大。",
+  "options": [],
+  "answer": "错",
+  "hint": "比例尺越大范围越小"
+ },
+ {
+  "id": "j_105",
+  "level": "junior",
+  "grade": null,
+  "subject": "civics",
+  "type": "single_choice",
+  "title": "未成年人权益受到侵害时，可以拨打哪个热线求助？",
+  "options": [
+   "12355",
+   "114",
+   "10086"
+  ],
+  "answer": "12355",
+  "hint": "12355是青少年服务台"
+ },
+ {
+  "id": "j_106",
+  "level": "junior",
+  "grade": null,
+  "subject": "civics",
+  "type": "single_choice",
+  "title": "过马路时应该怎么做？",
+  "options": [
+   "遵守交通信号灯",
+   "跟着别人走",
+   "低头玩手机"
+  ],
+  "answer": "遵守交通信号灯",
+  "hint": null
+ },
+ {
+  "id": "j_107",
+  "level": "junior",
+  "grade": null,
+  "subject": "civics",
+  "type": "single_choice",
+  "title": "网上有陌生人索要家庭住址和照片，应该怎么办？",
+  "options": [
+   "拒绝并告诉家长",
+   "全部告诉他",
+   "先发一点试试"
+  ],
+  "answer": "拒绝并告诉家长",
+  "hint": null
+ },
+ {
+  "id": "j_108",
+  "level": "junior",
+  "grade": null,
+  "subject": "civics",
+  "type": "single_choice",
+  "title": "中华人民共和国的国歌是什么？",
+  "options": [
+   "《义勇军进行曲》",
+   "《歌唱祖国》",
+   "《我和我的祖国》"
+  ],
+  "answer": "《义勇军进行曲》",
+  "hint": null
+ },
+ {
+  "id": "j_109",
+  "level": "junior",
+  "grade": null,
+  "subject": "civics",
+  "type": "true_false",
+  "title": "在公共场所不大声喧哗是文明行为。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "j_110",
+  "level": "junior",
+  "grade": null,
+  "subject": "civics",
+  "type": "true_false",
+  "title": "未成年人可以随意进入营业性网吧。",
+  "options": [],
+  "answer": "错",
+  "hint": "未成年人不得进入营业性网吧"
+ }
 ]

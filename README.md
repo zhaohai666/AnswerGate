@@ -276,3 +276,75 @@ tauri android build --release
 2. 阶段2的 macOS 沙箱问题若阻塞，临时用 `tauri dev`（非沙箱）先通流程，沙箱配置单独攻关；
 3. 题库填充（阶段5）无技术依赖，可与阶段4并行，也可外包给家长/众包收集；
 4. 每阶段结束打 git tag，出对应平台的冒烟安装包，避免问题积累到最后统一暴露。
+
+---
+
+## 十三、家长快速上手（使用指南）
+
+> 本节面向非技术家长。按下面步骤即可完成日常管理，无需了解编程。
+
+### 13.1 安装与启动
+
+- **Windows**：双击 `AnswerGate.exe`（或安装 `.msi`）。首次运行如被 Windows Defender 拦截，点击「仍要运行 / 允许」即可（自制程序未付费签名，属正常提示）。
+- **macOS**：打开 `AnswerGate.app`（首次在「系统设置 → 隐私与安全性」点「仍要打开」）。
+- **Android**：安装 `app-release.apk`（需允许"安装未知应用"）。
+
+孩子打开程序后只能看到答题界面：选学段 → 答题 → 达标自动启动目标软件并退出，答错则按您设置的规则重试/冷却。
+
+### 13.2 修改白名单 / 题量 / 及格线 / 家长密码
+
+配置文件位置（下称**运行目录**）：
+- Windows：`C:\Users\<用户名>\AppData\Roaming\com.answergate.app\config.toml`
+- macOS：`~/Library/Application Support/com.answergate.app/config.toml`
+- Android：应用私有目录（建议在电脑上改好配置随包发布）
+
+用任意文本编辑器（记事本/文本编辑）打开 `config.toml`：
+
+```toml
+[quiz]
+question_count = 5        # 每次抽几道题
+pass_score = 0.8          # 及格线：正确率 ≥ 80% 解锁（0.6 表示 60%）
+max_retry = 2             # 答错整套后可重试几次
+cool_down_sec = 120       # 重试用完后冷却多少秒
+
+[[target_apps]]           # 白名单：想管控哪个软件就加一段
+id = "minecraft"          # 唯一编号，别重复
+name = "我的世界"          # 孩子看到的名字
+mac = "/Applications/Minecraft.app"      # macOS 填 .app 路径
+win = "C:\\Program Files\\...\\game.exe" # Windows 填 exe 路径
+android = "com.mojang.minecraftpe"       # Android 填包名
+```
+
+**家长密码（应急解锁）**：在 `config.toml` 末尾加上：
+
+```toml
+[parent]
+password_hash = "把SHA256哈希粘贴到这里"
+```
+
+哈希可用在线工具搜索"SHA256 在线计算"生成（如密码 `1234` 对应 `81dc9bdb52d04dc20036dbd8313ed05581dc9bdb52d04dc20036dbd8313ed055` 的 64 位完整形式）。流程卡住时在程序内输入该密码即可直接解锁。**默认不填即不启用。**
+
+> 改完保存后重启程序生效。**删除 config.toml 不会重置冷却**——冷却状态存放在独立的隐藏文件里，重启/删配置都绕不过。
+
+### 13.3 添加或修改题目
+
+题库是纯文本 JSON 文件，位置：
+- 安装包内置：程序资源目录下 `resources/question_bank/`（kindergarten / primary / junior 三个文件）
+- 每道题一个 `{...}` 块，照抄现有格式改文字即可
+- 注意：`id` 不能重复；单选题 `answer` 必须是 `options` 里的原文；判断题答案只能是「对」或「错」；填空题多个可接受答案用 `|` 隔开
+- 改错了也不用怕：程序启动时会校验并明确提示哪一题格式不对
+
+Android 改白名单包名的限制：Android 11+ 系统要求**打包时**声明可跳转的包名清单，因此**新增 android 包名后需重新打包 APK** 才能生效（桌面端改配置即可，无需重打包）。
+
+### 13.4 查看答题日志
+
+日志按天滚动，位于运行目录 `logs/answer_gate.log`（可在 config.toml `[log]` 段关闭或改路径）。每行记录：时间、学段、得分、是否通过、是否解锁成功，家长可直接打开阅读，答题情况一目了然。
+
+### 13.5 管控边界（重要）
+
+本程序是**应用层门禁**：它代为启动白名单软件，但**不能**阻止孩子绕过它直接点开游戏图标。如需更强管控，请配合系统自带家长控制：
+- Windows：Microsoft 家庭安全（限制应用与时长）
+- macOS：屏幕使用时间（App 限额）
+- Android：系统数字健康/屏幕时间
+
+建议把目标软件的图标收进不显眼的文件夹，让孩子养成"先答题再玩"的习惯。

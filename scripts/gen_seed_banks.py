@@ -1,0 +1,357 @@
+#!/usr/bin/env python3
+"""一次性生成 AnswerGate 全量种子题库（k>=50/p>=100/j>=100）。
+条目格式：(type, subject, title, options, answer, hint)"""
+import json
+from pathlib import Path
+
+OUT = Path("/Users/haizai/project/AnswerGate/resources/question_bank")
+
+def bank(level, prefix, rows, start=1):
+    out = []
+    n = start
+    for (t, subj, title, options, answer, *rest) in rows:
+        hint = rest[0] if rest else None
+        out.append({
+            "id": f"{prefix}_{n:03d}", "level": level, "grade": None,
+            "subject": subj, "type": t, "title": title,
+            "options": list(options), "answer": answer, "hint": hint,
+        })
+        n += 1
+    return out
+
+# ---------- 幼儿园（原 16 + 新增 52 = 68） ----------
+kindergarten = [
+    ("single_choice","math","1+2等于几？",["2","3","4"],"3","从1往后数2个数"),
+    ("single_choice","math","3+3等于几？",["5","6","7"],"6",None),
+    ("single_choice","math","树上有2只鸟，又飞来1只，现在一共几只？",["2只","3只","4只"],"3只",None),
+    ("single_choice","common","太阳从哪个方向升起？",["东边","西边","南边"],"东边",None),
+    ("single_choice","common","下雨天出门应该带什么？",["雨伞","扇子","手套"],"雨伞",None),
+    ("single_choice","color","香蕉是什么颜色？",["红色","黄色","绿色"],"黄色",None),
+    ("single_choice","color","晴朗的天空是什么颜色？",["蓝色","黑色","粉色"],"蓝色",None),
+    ("single_choice","shape","车轮是什么形状？",["圆形","方形","三角形"],"圆形",None),
+    ("single_choice","common","红绿灯红灯亮了表示什么？",["停止","通行","跑步"],"停止",None),
+    ("true_false","common","小猫会汪汪叫。",[],"错","小狗才会汪汪叫"),
+    ("true_false","common","苹果是一种水果。",[],"对",None),
+    ("true_false","math","5比3大。",[],"对",None),
+    ("true_false","common","过马路前要先看红绿灯。",[],"对",None),
+    ("fill_blank","math","1、2、3、4，下一个数字是几？",[],"5|五",None),
+    ("fill_blank","math","10减1等于几？",[],"9|九",None),
+    ("fill_blank","common","一年有几个月？（填数字）",[],"12|十二",None),
+    # 数学·数字1-20
+    ("single_choice","math","2+2等于几？",["3","4","5"],"4",None),
+    ("single_choice","math","5-1等于几？",["3","4","5"],"4",None),
+    ("single_choice","math","1+4等于几？",["4","5","6"],"5",None),
+    ("single_choice","math","6-2等于几？",["3","4","5"],"4",None),
+    ("single_choice","math","2+3等于几？",["4","5","6"],"5",None),
+    ("single_choice","math","4+4等于几？",["6","7","8"],"8",None),
+    ("single_choice","math","9-5等于几？",["3","4","5"],"4",None),
+    ("single_choice","math","10以内最大的数是多少？",["8","9","10"],"10",None),
+    ("single_choice","math","数一数：★★★ 一共有几颗？",["2颗","3颗","4颗"],"3颗",None),
+    ("single_choice","math","7后面的一个数是多少？",["6","8","9"],"8",None),
+    ("single_choice","math","3个苹果吃掉1个，还剩几个？",["1个","2个","3个"],"2个",None),
+    ("true_false","math","0个苹果就是没有苹果。",[],"对",None),
+    ("true_false","math","8在7的前面。",[],"错","7在8前面"),
+    ("true_false","math","2+2=4。",[],"对",None),
+    ("true_false","math","10比9小。",[],"错","10比9大"),
+    ("fill_blank","math","2+2=？（填数字）",[],"4|四",None),
+    ("fill_blank","math","5-3=？（填数字）",[],"2|二",None),
+    ("fill_blank","math","从1数到5，最后一个数是几？",[],"5|五",None),
+    ("fill_blank","math","6+1=？（填数字）",[],"7|七",None),
+    ("fill_blank","math","9-4=？（填数字）",[],"5|五",None),
+    # 常识
+    ("single_choice","common","冬天很冷，应该穿什么？",["短袖","棉衣","泳衣"],"棉衣",None),
+    ("single_choice","common","天黑了，房间里应该开什么？",["灯","扇子","雨伞"],"灯",None),
+    ("single_choice","common","手脏了应该做什么？",["洗手","睡觉","跑步"],"洗手",None),
+    ("single_choice","common","睡觉前应该做什么？",["刷牙","吃糖","看电视"],"刷牙",None),
+    ("single_choice","common","垃圾应该扔进哪里？",["垃圾桶","花盆","桌子上"],"垃圾桶",None),
+    ("single_choice","common","发现着火了，应该打哪个电话？",["119","110","120"],"119",None),
+    ("single_choice","common","遇到坏人，应该打哪个电话？",["110","119","114"],"110",None),
+    ("true_false","common","饭前便后要洗手。",[],"对",None),
+    ("true_false","common","可以随便跟陌生人走。",[],"错","不能跟陌生人走"),
+    ("true_false","common","红灯停，绿灯行。",[],"对",None),
+    ("fill_blank","common","生病了应该告诉谁？（答一个就行）",[],"家长|妈妈|爸爸|老师|爸爸妈妈",None),
+    ("fill_blank","common","早晨太阳升起来，晚上太阳会____（提示：落下去）",[],"落山|下山|落下|落下去|落",None),
+    # 颜色形状
+    ("single_choice","color","草地是什么颜色？",["绿色","红色","黄色"],"绿色",None),
+    ("single_choice","color","雪是什么颜色？",["白色","黑色","蓝色"],"白色",None),
+    ("single_choice","color","西红柿是什么颜色？",["红色","紫色","白色"],"红色",None),
+    ("single_choice","shape","三角形有几条边？",["2条","3条","4条"],"3条",None),
+    ("single_choice","shape","正方形有几条边？",["3条","4条","5条"],"4条",None),
+    ("single_choice","shape","皮球是什么形状？",["球形","方形","锥形"],"球形",None),
+    ("true_false","shape","香蕉是弯弯的。",[],"对",None),
+    ("true_false","shape","轮子是圆的，所以能滚动。",[],"对",None),
+    ("fill_blank","color","红灯停，绿灯____。",[],"行|通行|走",None),
+    ("fill_blank","shape","圆形和方形积木中，能滚动的是____积木。",[],"圆形|圆|球形|球",None),
+    # 儿歌
+    ("single_choice","nursery","《小星星》里“一闪一闪亮晶晶，满天都是____”？",["小星星","小兔子","小花"],"小星星",None),
+    ("single_choice","nursery","《两只老虎》里跑得快的是什么动物？",["老虎","大象","乌龟"],"老虎",None),
+    ("single_choice","nursery","《数鸭子》里门前大桥下，游过一群什么？",["鸭","鱼","鹅"],"鸭",None),
+    ("single_choice","nursery","《拔萝卜》里第一个来拔萝卜的是谁？",["老公公","小狗","小猫"],"老公公",None),
+    ("single_choice","nursery","《找朋友》里“敬个礼呀握握手，你是我的____”？",["好朋友","坏朋友","陌生人"],"好朋友",None),
+    ("true_false","nursery","《小燕子》这首歌唱的是春天。",[],"对",None),
+    ("true_false","nursery","《世上只有妈妈好》唱的是爸爸。",[],"错","唱的是妈妈"),
+    ("fill_blank","nursery","“一闪一闪亮晶晶，满天都是____”。",[],"小星星|星星",None),
+    ("fill_blank","nursery","“门前大桥下，游过一群____”。",[],"鸭|鸭子",None),
+    ("fill_blank","nursery","“世上只有妈妈____”。",[],"好",None),
+]
+
+# ---------- 小学（原 16 + 新增 90 = 106） ----------
+primary = [
+    ("single_choice","math","3+5等于几？",["6","8","9"],"8","3往后数5个数"),
+    ("single_choice","math","12×3等于几？",["36","32","38"],"36",None),
+    ("single_choice","math","100以内最大的偶数是多少？",["98","99","100"],"98",None),
+    ("single_choice","math","正方形有几条对称轴？",["2条","4条","8条"],"4条",None),
+    ("single_choice","chinese","《静夜思》的作者是谁？",["李白","杜甫","白居易"],"李白",None),
+    ("single_choice","chinese","“床前明月光”的下一句是？",["疑是地上霜","低头思故乡","举头望明月"],"疑是地上霜",None),
+    ("single_choice","english","apple 的中文意思是？",["苹果","香蕉","橘子"],"苹果",None),
+    ("single_choice","english","book 的中文意思是？",["书","笔","包"],"书",None),
+    ("single_choice","science","地球围绕着什么转？",["太阳","月亮","火星"],"太阳",None),
+    ("true_false","math","0乘任何数都等于0。",[],"对",None),
+    ("true_false","chinese","《西游记》的作者是罗贯中。",[],"错","作者是吴承恩"),
+    ("true_false","science","水加热到100摄氏度会沸腾。",[],"对",None),
+    ("fill_blank","math","7×8等于几？",[],"56|五十六",None),
+    ("fill_blank","chinese","“欲穷千里目”的下一句是什么？",[],"更上一层楼",None),
+    ("fill_blank","english","cat 的中文意思是？（写中文）",[],"猫",None),
+    ("fill_blank","math","一个星期有几天？（填数字）",[],"7|七|七天|七日",None),
+    # 数学
+    ("single_choice","math","15+27等于多少？",["42","41","32"],"42",None),
+    ("single_choice","math","63-28等于多少？",["35","45","25"],"35",None),
+    ("single_choice","math","6×7等于多少？",["42","48","36"],"42",None),
+    ("single_choice","math","81÷9等于多少？",["8","9","7"],"9",None),
+    ("single_choice","math","1/2 + 1/4 等于多少？",["3/4","2/6","1/6"],"3/4","先通分成1/4+2/4"),
+    ("single_choice","math","三角形的内角和是多少度？",["180度","360度","90度"],"180度",None),
+    ("single_choice","math","3.5 + 2.5 = ？",["6","5.5","6.5"],"6",None),
+    ("single_choice","math","25×4等于多少？",["100","90","50"],"100",None),
+    ("single_choice","math","下面哪个数比0.8大？",["0.75","0.9","0.79"],"0.9",None),
+    ("single_choice","math","时钟3点整，时针和分针的夹角是多少度？",["90度","60度","120度"],"90度",None),
+    ("single_choice","math","最小的质数是几？",["1","2","3"],"2","1不是质数"),
+    ("single_choice","math","1000克等于多少千克？",["1千克","10千克","100千克"],"1千克",None),
+    ("single_choice","math","长方形长8厘米、宽5厘米，周长是多少厘米？",["26","40","13"],"26","(长+宽)×2"),
+    ("single_choice","math","48÷6等于多少？",["7","8","9"],"8",None),
+    ("single_choice","math","一年中有几个月是31天（大月）？",["6个","7个","8个"],"7个",None),
+    ("single_choice","math","0.5化成分数是多少？",["1/2","1/5","2/5"],"1/2",None),
+    ("single_choice","math","12和18的最大公因数是多少？",["6","3","9"],"6",None),
+    ("single_choice","math","100以内最大的质数是多少？",["97","99","91"],"97",None),
+    ("true_false","math","两个奇数相加的和一定是偶数。",[],"对",None),
+    ("true_false","math","所有的偶数都能被2整除。",[],"对",None),
+    ("true_false","math","0是最小的自然数。",[],"对",None),
+    ("true_false","math","圆的周长与直径的比值是圆周率π。",[],"对",None),
+    ("true_false","math","一条射线长5厘米。",[],"错","射线无限长，不能量长度"),
+    ("true_false","math","1米等于100厘米。",[],"对",None),
+    ("fill_blank","math","9×9等于多少？（填数字）",[],"81|八十一",None),
+    ("fill_blank","math","120÷4等于多少？（填数字）",[],"30|三十",None),
+    ("fill_blank","math","一个数加上25等于60，这个数是多少？",[],"35|三十五",None),
+    ("fill_blank","math","3.2 + 1.8 = ？",[],"5|5.0",None),
+    ("fill_blank","math","正方形边长6厘米，面积是多少平方厘米？（填数字）",[],"36|三十六",None),
+    ("fill_blank","math","2、4、6、8，下一个偶数是多少？",[],"10|十",None),
+    # 语文
+    ("single_choice","chinese","“春眠不觉晓”的下一句是？",["处处闻啼鸟","花落知多少","夜来风雨声"],"处处闻啼鸟",None),
+    ("single_choice","chinese","成语“守株待兔”中的“株”是指什么？",["树桩","树木","小草"],"树桩",None),
+    ("single_choice","chinese","《咏鹅》的作者是谁？",["骆宾王","李白","王维"],"骆宾王",None),
+    ("single_choice","chinese","“日”字加一笔，可以变成哪个字？",["目","田","月"],"目",None),
+    ("single_choice","chinese","“高大”的反义词是什么？",["矮小","巨大","长大"],"矮小",None),
+    ("single_choice","chinese","小蝌蚪长大后会变成什么？",["青蛙","蟾蜍","鱼"],"青蛙",None),
+    ("single_choice","chinese","一年中的第一个季节是？",["春天","夏天","秋天"],"春天",None),
+    ("single_choice","chinese","成语“画蛇添足”的意思是？",["多此一举","雪中送炭","锦上添花"],"多此一举",None),
+    ("single_choice","chinese","“夜来风雨声，花落知多少”出自哪首诗？",["《春晓》","《静夜思》","《咏柳》"],"《春晓》",None),
+    ("single_choice","chinese","汉字“森”里有几个“木”？",["2个","3个","4个"],"3个",None),
+    ("single_choice","chinese","《望庐山瀑布》的作者是谁？",["李白","杜甫","白居易"],"李白",None),
+    ("single_choice","chinese","妈妈的妈妈应该叫什么？",["外婆","奶奶","姑姑"],"外婆",None),
+    ("true_false","chinese","《三字经》的开头是“人之初，性本善”。",[],"对",None),
+    ("true_false","chinese","“纸上得来终觉浅，绝知此事要躬行”强调要亲自实践。",[],"对",None),
+    ("true_false","chinese","拼音字母 b 和 d 的形状完全一样。",[],"错","一个圆在左一个圆在右"),
+    ("true_false","chinese","《水浒传》讲的是梁山一百零八好汉的故事。",[],"对",None),
+    ("true_false","chinese","写汉字时笔顺一般是从右往左写。",[],"错","一般是从上到下、从左到右"),
+    ("true_false","chinese","“安”字的上面是宝盖头。",[],"对",None),
+    ("fill_blank","chinese","“欲穷千里目”的上一句是什么？",[],"黄河入海流",None),
+    ("fill_blank","chinese","成语填空：井底之____。",[],"蛙",None),
+    ("fill_blank","chinese","“举头望明月”的下一句是什么？",[],"低头思故乡",None),
+    ("fill_blank","chinese","一年有四季：春、夏、秋、____。",[],"冬",None),
+    ("fill_blank","chinese","成语填空：花红柳____。",[],"绿",None),
+    ("fill_blank","chinese","《悯农》里“谁知盘中餐”的下一句是什么？",[],"粒粒皆辛苦",None),
+    # 英语
+    ("single_choice","english","dog 的中文意思是？",["狗","猫","鸟"],"狗",None),
+    ("single_choice","english","red 是什么颜色？",["红色","蓝色","绿色"],"红色",None),
+    ("single_choice","english","“How are you?” 可以怎么回答？",["I'm fine, thank you.","Goodbye.","Sorry."],"I'm fine, thank you.",None),
+    ("single_choice","english","two + three = ？（用英文单词）",["four","five","six"],"five",None),
+    ("single_choice","english","teacher 的中文意思是？",["老师","医生","警察"],"老师",None),
+    ("single_choice","english","“苹果”的英文是什么？",["apple","orange","banana"],"apple",None),
+    ("single_choice","english","Monday 是一周的第几天（英语习惯）？",["第一天","第二天","最后一天"],"第一天",None),
+    ("single_choice","english","weather 的中文意思是？",["天气","水","风"],"天气",None),
+    ("single_choice","english","“谢谢”用英语怎么说？",["Thank you","Sorry","Hello"],"Thank you",None),
+    ("single_choice","english","big 的反义词是什么？",["small","tall","long"],"small",None),
+    ("true_false","english","book 和 books 都和“书”有关，books 是复数。",[],"对",None),
+    ("true_false","english","英语字母一共有26个。",[],"对",None),
+    ("true_false","english","“Good morning”是晚上打招呼用的。",[],"错","是早上用的"),
+    ("true_false","english","cat 的意思是狗。",[],"错","cat是猫"),
+    ("fill_blank","english","“二”的英文单词是？（写英文）",[],"two",None),
+    ("fill_blank","english","“再见”用英语说，以 g 开头（写英文）",[],"goodbye|good bye|bye",None),
+    ("fill_blank","english","seven 的中文意思是？（写中文）",[],"7|七",None),
+    ("fill_blank","english","“眼睛”的英文单词（单数）是？（写英文）",[],"eye",None),
+    ("fill_blank","english","water 的中文意思是？（写中文）",[],"水",None),
+    ("fill_blank","english","yellow 是什么颜色？（写中文）",[],"黄色",None),
+    # 科学
+    ("single_choice","science","植物生长需要什么？",["阳光和水","巧克力和糖","玩具"],"阳光和水",None),
+    ("single_choice","science","彩虹一般有几种颜色？",["7种","5种","3种"],"7种",None),
+    ("single_choice","science","磁铁能吸住下面哪种东西？",["铁钉","木头","塑料尺"],"铁钉",None),
+    ("single_choice","science","小蝌蚪长成青蛙，这属于动物的什么现象？",["生长变化","冬眠","迁徙"],"生长变化",None),
+    ("single_choice","science","空气看不见摸不着，它存在吗？",["存在","不存在","只有白天存在"],"存在",None),
+    ("single_choice","science","月亮的光是从哪里来的？",["反射太阳光","自己发光","反射地球光"],"反射太阳光",None),
+    ("single_choice","science","种子发芽时最先长出的是？",["根","叶子","花"],"根",None),
+    ("single_choice","science","下面哪种动物是哺乳动物？",["鲸鱼","鲨鱼","鳄鱼"],"鲸鱼","鲸鱼用肺呼吸、胎生哺乳"),
+    ("true_false","science","水有三种形态：冰、水、水蒸气。",[],"对",None),
+    ("true_false","science","植物在晚上也在进行呼吸作用。",[],"对",None),
+    ("true_false","science","太阳是一颗行星。",[],"错","太阳是恒星"),
+    ("true_false","science","冬天手冷时搓一搓会变暖，是因为摩擦生热。",[],"对",None),
+    ("fill_blank","science","水结冰的温度是（填数字）摄氏度。",[],"0|零",None),
+    ("fill_blank","science","蝴蝶的一生要经过卵、幼虫、____、成虫四个阶段。",[],"蛹",None),
+    ("fill_blank","science","植物的根从土壤里吸收____和养分。",[],"水|水分",None),
+    ("fill_blank","science","太阳从东边升起，从____边落下。",[],"西",None),
+]
+
+# ---------- 初中（原 16 + 新增 94 = 110） ----------
+junior = [
+    ("single_choice","math","方程 x²=9 的解是？",["x=3","x=±3","x=9"],"x=±3","注意负数解"),
+    ("single_choice","math","直角三角形两条直角边分别为3和4，斜边长是？",["5","6","7"],"5","勾股定理"),
+    ("single_choice","physics","水的密度是多少？",["1.0g/cm³","0.8g/cm³","13.6g/cm³"],"1.0g/cm³",None),
+    ("single_choice","physics","光在真空中的传播速度约为？",["3×10⁸m/s","3×10⁶m/s","3×10¹⁰m/s"],"3×10⁸m/s",None),
+    ("single_choice","chemistry","水的化学式是？",["H₂O","CO₂","O₂"],"H₂O",None),
+    ("single_choice","chemistry","元素符号 Fe 表示哪种元素？",["铁","铜","锌"],"铁",None),
+    ("single_choice","biology","人体进行气体交换（呼吸）的主要器官是？",["肺","心脏","肝脏"],"肺",None),
+    ("single_choice","biology","细胞是生物体结构和功能的什么？",["基本单位","最大单位","附属结构"],"基本单位",None),
+    ("single_choice","history","中国人民抗日战争胜利是在哪一年？",["1945年","1937年","1949年"],"1945年",None),
+    ("single_choice","geography","地球上面积最大的大洋是？",["太平洋","大西洋","印度洋"],"太平洋",None),
+    ("true_false","physics","声音可以在真空中传播。",[],"错","声音传播需要介质"),
+    ("true_false","history","秦朝是中国历史上第一个统一的中央集权王朝。",[],"对",None),
+    ("fill_blank","chemistry","氧气的化学式是 O₂，其中下标的数字是几？（填数字）",[],"2|二",None),
+    ("fill_blank","math","-3的绝对值是多少？",[],"3",None),
+    ("fill_blank","english","book 的复数形式是？（写英文）",[],"books",None),
+    ("fill_blank","chinese","“会当凌绝顶”的下一句是什么？",[],"一览众山小",None),
+    # 数学
+    ("single_choice","math","-5 + 8 = ？",["3","-3","13"],"3",None),
+    ("single_choice","math","平行四边形的面积公式是？",["底×高","底×高÷2","(底+高)×2"],"底×高",None),
+    ("single_choice","math","2⁵ 等于多少？",["10","32","25"],"32",None),
+    ("single_choice","math","袋子里有3个红球、2个白球，摸到红球的概率是？",["3/5","2/5","1/2"],"3/5",None),
+    ("single_choice","math","圆的半径是3（π取3.14），圆的面积是多少？",["28.26","18.84","9.42"],"28.26",None),
+    ("single_choice","math","函数 y=2x+1 中，当 x=3 时 y 等于多少？",["7","6","5"],"7",None),
+    ("single_choice","math","不等式 2x > 10 的解集是？",["x>5","x<5","x>20"],"x>5",None),
+    ("single_choice","math","16 的算术平方根是多少？",["4","±4","8"],"4",None),
+    ("single_choice","math","数据 2、3、5、6 的平均数是多少？",["4","3.5","5"],"4",None),
+    ("single_choice","math","三角形两边长为3和7，第三边可能是多少？",["4","9","10"],"9","第三边大于两边之差、小于两边之和"),
+    ("true_false","math","在实数范围内，负数没有平方根。",[],"对",None),
+    ("true_false","math","两直线平行，同位角相等。",[],"对",None),
+    ("true_false","math","所有的矩形都是正方形。",[],"错","正方形是特殊矩形"),
+    ("true_false","math","半径为 r 的圆，周长是 2πr。",[],"对",None),
+    ("fill_blank","math","分解因式：x²-1 = (x+1)×____",[],"x-1",None),
+    ("fill_blank","math","方程 3x-6=0 的解是 x=____",[],"2",None),
+    ("fill_blank","math","数据 1、2、3、4、5 的中位数是____",[],"3",None),
+    ("fill_blank","math","直径为10的圆，半径是____",[],"5",None),
+    # 语文
+    ("single_choice","chinese","散文《背影》的作者是谁？",["朱自清","老舍","鲁迅"],"朱自清",None),
+    ("single_choice","chinese","“但愿人长久，千里共婵娟”中的“婵娟”指什么？",["月亮","太阳","星星"],"月亮",None),
+    ("single_choice","chinese","《从百草园到三味书屋》选自鲁迅的哪部作品？",["《朝花夕拾》","《呐喊》","《彷徨》"],"《朝花夕拾》",None),
+    ("single_choice","chinese","成语“世外桃源”出自哪篇文章？",["《桃花源记》","《岳阳楼记》","《醉翁亭记》"],"《桃花源记》",None),
+    ("single_choice","chinese","下列谁属于“唐宋八大家”？",["韩愈","李白","辛弃疾"],"韩愈",None),
+    ("single_choice","chinese","《红楼梦》的作者是谁？",["曹雪芹","罗贯中","施耐庵"],"曹雪芹",None),
+    ("true_false","chinese","“先天下之忧而忧，后天下之乐而乐”出自《岳阳楼记》。",[],"对",None),
+    ("true_false","chinese","《木兰诗》是唐代文人创作的浪漫主义诗歌。",[],"错","是北朝民歌"),
+    ("true_false","chinese","写对联讲究上下联字数相等、词性相对。",[],"对",None),
+    ("fill_blank","chinese","“海内存知己”的下一句是什么？",[],"天涯若比邻",None),
+    ("fill_blank","chinese","《出师表》的作者是____。",[],"诸葛亮|孔明",None),
+    ("fill_blank","chinese","“落霞与孤鹜齐飞”的下一句是什么？",[],"秋水共长天一色",None),
+    # 英语
+    ("single_choice","english","library 的中文意思是？",["图书馆","实验室","书店"],"图书馆",None),
+    ("single_choice","english","go 的过去式是什么？",["went","goed","gone"],"went",None),
+    ("single_choice","english","下面哪句话是正确的？",["He is a student.","He are a student.","He am a student."],"He is a student.",None),
+    ("single_choice","english","basketball 的中文意思是？",["篮球","足球","排球"],"篮球",None),
+    ("single_choice","english","cheap（便宜的）的反义词是？",["expensive","small","light"],"expensive",None),
+    ("single_choice","english","一周有几天？（英语课上学的）",["Six","Seven","Eight"],"Seven",None),
+    ("true_false","english","“an apple”用 an，是因为 apple 以元音音素开头。",[],"对",None),
+    ("true_false","english","英语句子开头的第一个字母通常要大写。",[],"对",None),
+    ("true_false","english","“She like music.”这句话是正确的。",[],"错","第三人称单数要用 likes"),
+    ("fill_blank","english","“一月”的英文单词是？（写英文）",[],"january|January",None),
+    ("fill_blank","english","good 的比较级是？（写英文）",[],"better",None),
+    ("fill_blank","english","Saturday 和 Sunday 合起来叫什么？（写英文）",[],"weekend|weekends",None),
+    # 物理
+    ("single_choice","physics","用力拉弹簧，弹簧变长了。这说明力可以改变物体的什么？",["形状","颜色","质量"],"形状",None),
+    ("single_choice","physics","下面哪种材料是导体？",["铜","橡胶","玻璃"],"铜",None),
+    ("single_choice","physics","中国家庭电路的电压是多少伏？",["220V","110V","36V"],"220V",None),
+    ("single_choice","physics","声音的三要素不包括下面哪一项？",["音调","响度","颜色"],"颜色",None),
+    ("single_choice","physics","光从空气斜射入水中时会发生什么？",["折射","传播速度变快","不发生任何变化"],"折射",None),
+    ("single_choice","physics","重力的方向总是怎样的？",["竖直向下","向上","水平方向"],"竖直向下",None),
+    ("true_false","physics","串联电路中电流处处相等。",[],"对",None),
+    ("true_false","physics","物体温度越高，内部分子热运动越剧烈。",[],"对",None),
+    ("true_false","physics","凸透镜对光线有发散作用。",[],"错","凸透镜会聚光线"),
+    ("true_false","physics","1千瓦时就是我们常说的1度电。",[],"对",None),
+    ("fill_blank","physics","标准大气压下水的沸点是（填数字）摄氏度。",[],"100|一百",None),
+    ("fill_blank","physics","电流的单位是____（填中文名称）。",[],"安培|安",None),
+    # 化学
+    ("single_choice","chemistry","下面属于化学变化的是？",["铁生锈","冰融化","酒精挥发"],"铁生锈",None),
+    ("single_choice","chemistry","空气中含量最多的气体是？",["氮气","氧气","二氧化碳"],"氮气",None),
+    ("single_choice","chemistry","pH小于7的溶液呈什么性？",["酸性","碱性","中性"],"酸性",None),
+    ("single_choice","chemistry","金刚石和石墨都是由哪种元素组成的？",["碳","氧","硅"],"碳",None),
+    ("single_choice","chemistry","化学式 CO₂ 表示什么物质？",["二氧化碳","一氧化碳","氧气"],"二氧化碳",None),
+    ("single_choice","chemistry","铁在潮湿的空气中生锈，主要是铁与什么发生了反应？",["氧气和水","氮气","二氧化碳"],"氧气和水",None),
+    ("true_false","chemistry","分子是保持物质化学性质的最小粒子。",[],"对",None),
+    ("true_false","chemistry","水是由氢气和氧气组成的。",[],"错","水由氢元素和氧元素组成"),
+    ("true_false","chemistry","催化剂在化学反应前后的质量不变。",[],"对",None),
+    ("true_false","chemistry","金属元素在化学反应中一般容易失去电子。",[],"对",None),
+    ("fill_blank","chemistry","氢气的化学式是____（用元素符号写）。",[],"H₂|H2",None),
+    ("fill_blank","chemistry","稀释浓硫酸时，应把____慢慢倒入水中（填物质名称）。",[],"浓硫酸|硫酸",None),
+    # 生物
+    ("single_choice","biology","植物进行光合作用的主要器官是？",["叶","根","茎"],"叶",None),
+    ("single_choice","biology","人体最大的消化腺是什么？",["肝脏","胃","胰腺"],"肝脏",None),
+    ("single_choice","biology","血液中负责运输氧气的是哪种细胞？",["红细胞","白细胞","血小板"],"红细胞",None),
+    ("single_choice","biology","生态系统中属于“生产者”的是？",["绿色植物","兔子","细菌"],"绿色植物",None),
+    ("true_false","biology","DNA 是主要的遗传物质。",[],"对",None),
+    ("true_false","biology","植物在夜间也进行呼吸作用。",[],"对",None),
+    ("true_false","biology","人体的运动只靠骨骼就够了，不需要肌肉。",[],"错","需要肌肉牵拉"),
+    ("fill_blank","biology","人体生命活动的基本结构单位是____。",[],"细胞",None),
+    # 历史
+    ("single_choice","history","中国历史上第一个王朝是？",["夏朝","商朝","周朝"],"夏朝",None),
+    ("single_choice","history","指南针、造纸术、印刷术、火药合称为什么？",["四大发明","四大名著","四大工程"],"四大发明",None),
+    ("single_choice","history","郑和下西洋发生在哪个朝代？",["明朝","唐朝","宋朝"],"明朝",None),
+    ("single_choice","history","第一次工业革命最先开始于哪个国家？",["英国","法国","美国"],"英国",None),
+    ("true_false","history","秦始皇统一六国后，统一了文字和货币。",[],"对",None),
+    ("true_false","history","唐太宗李世民使用的年号是“开元”。",[],"错","是贞观"),
+    ("fill_blank","history","《史记》的作者是____。",[],"司马迁",None),
+    ("fill_blank","history","中华人民共和国成立于____年（填数字）。",[],"1949",None),
+    # 地理
+    ("single_choice","geography","中国最长的河流是？",["长江","黄河","珠江"],"长江",None),
+    ("single_choice","geography","世界上最高的山峰是？",["珠穆朗玛峰","富士山","乞力马扎罗山"],"珠穆朗玛峰",None),
+    ("single_choice","geography","中国面积最大的省级行政区是？",["新疆","西藏","内蒙古"],"新疆",None),
+    ("single_choice","geography","地球自转一周大约需要多长时间？",["24小时","12小时","48小时"],"24小时",None),
+    ("true_false","geography","中国位于北半球。",[],"对",None),
+    ("true_false","geography","地图比例尺越大，表示的实际范围越大。",[],"错","比例尺越大范围越小"),
+    # 道德与法治
+    ("single_choice","civics","未成年人权益受到侵害时，可以拨打哪个热线求助？",["12355","114","10086"],"12355","12355是青少年服务台"),
+    ("single_choice","civics","过马路时应该怎么做？",["遵守交通信号灯","跟着别人走","低头玩手机"],"遵守交通信号灯",None),
+    ("single_choice","civics","网上有陌生人索要家庭住址和照片，应该怎么办？",["拒绝并告诉家长","全部告诉他","先发一点试试"],"拒绝并告诉家长",None),
+    ("single_choice","civics","中华人民共和国的国歌是什么？",["《义勇军进行曲》","《歌唱祖国》","《我和我的祖国》"],"《义勇军进行曲》",None),
+    ("true_false","civics","在公共场所不大声喧哗是文明行为。",[],"对",None),
+    ("true_false","civics","未成年人可以随意进入营业性网吧。",[],"错","未成年人不得进入营业性网吧"),
+]
+
+k = bank("kindergarten", "k", kindergarten)
+p = bank("primary", "p", primary)
+j = bank("junior", "j", junior)
+
+for name, data in [("kindergarten.json", k), ("primary.json", p), ("junior.json", j)]:
+    path = OUT / name
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
+    print(f"{name}: {len(data)} 题")
+
+# 自检：id 唯一、sc 答案在选项内、tf 合法、fb 非空
+ids = set()
+for data, expect in [(k, "kindergarten"), (p, "primary"), (j, "junior")]:
+    for q in data:
+        assert q["id"] not in ids, f"重复 id {q['id']}"
+        ids.add(q["id"])
+        assert q["level"] == expect
+        if q["type"] == "single_choice":
+            assert q["answer"] in q["options"], f"{q['id']} 答案不在选项中"
+        elif q["type"] == "true_false":
+            assert q["answer"] in ("对", "错"), q["id"]
+        else:
+            assert q["answer"].strip(), q["id"]
+print(f"自检通过，总题量 {len(ids)}")

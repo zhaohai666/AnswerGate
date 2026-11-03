@@ -1,18 +1,902 @@
 [
-  { "id": "k_001", "level": "kindergarten", "grade": null, "subject": "math", "type": "single_choice", "title": "1+2等于几？", "options": ["2", "3", "4"], "answer": "3", "hint": "从1往后数2个数" },
-  { "id": "k_002", "level": "kindergarten", "grade": null, "subject": "math", "type": "single_choice", "title": "3+3等于几？", "options": ["5", "6", "7"], "answer": "6", "hint": null },
-  { "id": "k_003", "level": "kindergarten", "grade": null, "subject": "math", "type": "single_choice", "title": "树上有2只鸟，又飞来1只，现在一共几只？", "options": ["2只", "3只", "4只"], "answer": "3只", "hint": null },
-  { "id": "k_004", "level": "kindergarten", "grade": null, "subject": "common", "type": "single_choice", "title": "太阳从哪个方向升起？", "options": ["东边", "西边", "南边"], "answer": "东边", "hint": null },
-  { "id": "k_005", "level": "kindergarten", "grade": null, "subject": "common", "type": "single_choice", "title": "下雨天出门应该带什么？", "options": ["雨伞", "扇子", "手套"], "answer": "雨伞", "hint": null },
-  { "id": "k_006", "level": "kindergarten", "grade": null, "subject": "color", "type": "single_choice", "title": "香蕉是什么颜色？", "options": ["红色", "黄色", "绿色"], "answer": "黄色", "hint": null },
-  { "id": "k_007", "level": "kindergarten", "grade": null, "subject": "color", "type": "single_choice", "title": "晴朗的天空是什么颜色？", "options": ["蓝色", "黑色", "粉色"], "answer": "蓝色", "hint": null },
-  { "id": "k_008", "level": "kindergarten", "grade": null, "subject": "shape", "type": "single_choice", "title": "车轮是什么形状？", "options": ["圆形", "方形", "三角形"], "answer": "圆形", "hint": null },
-  { "id": "k_009", "level": "kindergarten", "grade": null, "subject": "common", "type": "single_choice", "title": "红绿灯红灯亮了表示什么？", "options": ["停止", "通行", "跑步"], "answer": "停止", "hint": null },
-  { "id": "k_010", "level": "kindergarten", "grade": null, "subject": "common", "type": "true_false", "title": "小猫会汪汪叫。", "options": [], "answer": "错", "hint": "小狗才会汪汪叫" },
-  { "id": "k_011", "level": "kindergarten", "grade": null, "subject": "common", "type": "true_false", "title": "苹果是一种水果。", "options": [], "answer": "对", "hint": null },
-  { "id": "k_012", "level": "kindergarten", "grade": null, "subject": "math", "type": "true_false", "title": "5比3大。", "options": [], "answer": "对", "hint": null },
-  { "id": "k_013", "level": "kindergarten", "grade": null, "subject": "common", "type": "true_false", "title": "过马路前要先看红绿灯。", "options": [], "answer": "对", "hint": null },
-  { "id": "k_014", "level": "kindergarten", "grade": null, "subject": "math", "type": "fill_blank", "title": "1、2、3、4，下一个数字是几？", "options": [], "answer": "5|五", "hint": null },
-  { "id": "k_015", "level": "kindergarten", "grade": null, "subject": "math", "type": "fill_blank", "title": "10减1等于几？", "options": [], "answer": "9|九", "hint": null },
-  { "id": "k_016", "level": "kindergarten", "grade": null, "subject": "common", "type": "fill_blank", "title": "一年有几个月？（填数字）", "options": [], "answer": "12|十二", "hint": null }
+ {
+  "id": "k_001",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "1+2等于几？",
+  "options": [
+   "2",
+   "3",
+   "4"
+  ],
+  "answer": "3",
+  "hint": "从1往后数2个数"
+ },
+ {
+  "id": "k_002",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "3+3等于几？",
+  "options": [
+   "5",
+   "6",
+   "7"
+  ],
+  "answer": "6",
+  "hint": null
+ },
+ {
+  "id": "k_003",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "树上有2只鸟，又飞来1只，现在一共几只？",
+  "options": [
+   "2只",
+   "3只",
+   "4只"
+  ],
+  "answer": "3只",
+  "hint": null
+ },
+ {
+  "id": "k_004",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "common",
+  "type": "single_choice",
+  "title": "太阳从哪个方向升起？",
+  "options": [
+   "东边",
+   "西边",
+   "南边"
+  ],
+  "answer": "东边",
+  "hint": null
+ },
+ {
+  "id": "k_005",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "common",
+  "type": "single_choice",
+  "title": "下雨天出门应该带什么？",
+  "options": [
+   "雨伞",
+   "扇子",
+   "手套"
+  ],
+  "answer": "雨伞",
+  "hint": null
+ },
+ {
+  "id": "k_006",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "color",
+  "type": "single_choice",
+  "title": "香蕉是什么颜色？",
+  "options": [
+   "红色",
+   "黄色",
+   "绿色"
+  ],
+  "answer": "黄色",
+  "hint": null
+ },
+ {
+  "id": "k_007",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "color",
+  "type": "single_choice",
+  "title": "晴朗的天空是什么颜色？",
+  "options": [
+   "蓝色",
+   "黑色",
+   "粉色"
+  ],
+  "answer": "蓝色",
+  "hint": null
+ },
+ {
+  "id": "k_008",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "shape",
+  "type": "single_choice",
+  "title": "车轮是什么形状？",
+  "options": [
+   "圆形",
+   "方形",
+   "三角形"
+  ],
+  "answer": "圆形",
+  "hint": null
+ },
+ {
+  "id": "k_009",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "common",
+  "type": "single_choice",
+  "title": "红绿灯红灯亮了表示什么？",
+  "options": [
+   "停止",
+   "通行",
+   "跑步"
+  ],
+  "answer": "停止",
+  "hint": null
+ },
+ {
+  "id": "k_010",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "common",
+  "type": "true_false",
+  "title": "小猫会汪汪叫。",
+  "options": [],
+  "answer": "错",
+  "hint": "小狗才会汪汪叫"
+ },
+ {
+  "id": "k_011",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "common",
+  "type": "true_false",
+  "title": "苹果是一种水果。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "k_012",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "math",
+  "type": "true_false",
+  "title": "5比3大。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "k_013",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "common",
+  "type": "true_false",
+  "title": "过马路前要先看红绿灯。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "k_014",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "math",
+  "type": "fill_blank",
+  "title": "1、2、3、4，下一个数字是几？",
+  "options": [],
+  "answer": "5|五",
+  "hint": null
+ },
+ {
+  "id": "k_015",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "math",
+  "type": "fill_blank",
+  "title": "10减1等于几？",
+  "options": [],
+  "answer": "9|九",
+  "hint": null
+ },
+ {
+  "id": "k_016",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "common",
+  "type": "fill_blank",
+  "title": "一年有几个月？（填数字）",
+  "options": [],
+  "answer": "12|十二",
+  "hint": null
+ },
+ {
+  "id": "k_017",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "2+2等于几？",
+  "options": [
+   "3",
+   "4",
+   "5"
+  ],
+  "answer": "4",
+  "hint": null
+ },
+ {
+  "id": "k_018",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "5-1等于几？",
+  "options": [
+   "3",
+   "4",
+   "5"
+  ],
+  "answer": "4",
+  "hint": null
+ },
+ {
+  "id": "k_019",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "1+4等于几？",
+  "options": [
+   "4",
+   "5",
+   "6"
+  ],
+  "answer": "5",
+  "hint": null
+ },
+ {
+  "id": "k_020",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "6-2等于几？",
+  "options": [
+   "3",
+   "4",
+   "5"
+  ],
+  "answer": "4",
+  "hint": null
+ },
+ {
+  "id": "k_021",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "2+3等于几？",
+  "options": [
+   "4",
+   "5",
+   "6"
+  ],
+  "answer": "5",
+  "hint": null
+ },
+ {
+  "id": "k_022",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "4+4等于几？",
+  "options": [
+   "6",
+   "7",
+   "8"
+  ],
+  "answer": "8",
+  "hint": null
+ },
+ {
+  "id": "k_023",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "9-5等于几？",
+  "options": [
+   "3",
+   "4",
+   "5"
+  ],
+  "answer": "4",
+  "hint": null
+ },
+ {
+  "id": "k_024",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "10以内最大的数是多少？",
+  "options": [
+   "8",
+   "9",
+   "10"
+  ],
+  "answer": "10",
+  "hint": null
+ },
+ {
+  "id": "k_025",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "数一数：★★★ 一共有几颗？",
+  "options": [
+   "2颗",
+   "3颗",
+   "4颗"
+  ],
+  "answer": "3颗",
+  "hint": null
+ },
+ {
+  "id": "k_026",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "7后面的一个数是多少？",
+  "options": [
+   "6",
+   "8",
+   "9"
+  ],
+  "answer": "8",
+  "hint": null
+ },
+ {
+  "id": "k_027",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "3个苹果吃掉1个，还剩几个？",
+  "options": [
+   "1个",
+   "2个",
+   "3个"
+  ],
+  "answer": "2个",
+  "hint": null
+ },
+ {
+  "id": "k_028",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "math",
+  "type": "true_false",
+  "title": "0个苹果就是没有苹果。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "k_029",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "math",
+  "type": "true_false",
+  "title": "8在7的前面。",
+  "options": [],
+  "answer": "错",
+  "hint": "7在8前面"
+ },
+ {
+  "id": "k_030",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "math",
+  "type": "true_false",
+  "title": "2+2=4。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "k_031",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "math",
+  "type": "true_false",
+  "title": "10比9小。",
+  "options": [],
+  "answer": "错",
+  "hint": "10比9大"
+ },
+ {
+  "id": "k_032",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "math",
+  "type": "fill_blank",
+  "title": "2+2=？（填数字）",
+  "options": [],
+  "answer": "4|四",
+  "hint": null
+ },
+ {
+  "id": "k_033",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "math",
+  "type": "fill_blank",
+  "title": "5-3=？（填数字）",
+  "options": [],
+  "answer": "2|二",
+  "hint": null
+ },
+ {
+  "id": "k_034",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "math",
+  "type": "fill_blank",
+  "title": "从1数到5，最后一个数是几？",
+  "options": [],
+  "answer": "5|五",
+  "hint": null
+ },
+ {
+  "id": "k_035",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "math",
+  "type": "fill_blank",
+  "title": "6+1=？（填数字）",
+  "options": [],
+  "answer": "7|七",
+  "hint": null
+ },
+ {
+  "id": "k_036",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "math",
+  "type": "fill_blank",
+  "title": "9-4=？（填数字）",
+  "options": [],
+  "answer": "5|五",
+  "hint": null
+ },
+ {
+  "id": "k_037",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "common",
+  "type": "single_choice",
+  "title": "冬天很冷，应该穿什么？",
+  "options": [
+   "短袖",
+   "棉衣",
+   "泳衣"
+  ],
+  "answer": "棉衣",
+  "hint": null
+ },
+ {
+  "id": "k_038",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "common",
+  "type": "single_choice",
+  "title": "天黑了，房间里应该开什么？",
+  "options": [
+   "灯",
+   "扇子",
+   "雨伞"
+  ],
+  "answer": "灯",
+  "hint": null
+ },
+ {
+  "id": "k_039",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "common",
+  "type": "single_choice",
+  "title": "手脏了应该做什么？",
+  "options": [
+   "洗手",
+   "睡觉",
+   "跑步"
+  ],
+  "answer": "洗手",
+  "hint": null
+ },
+ {
+  "id": "k_040",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "common",
+  "type": "single_choice",
+  "title": "睡觉前应该做什么？",
+  "options": [
+   "刷牙",
+   "吃糖",
+   "看电视"
+  ],
+  "answer": "刷牙",
+  "hint": null
+ },
+ {
+  "id": "k_041",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "common",
+  "type": "single_choice",
+  "title": "垃圾应该扔进哪里？",
+  "options": [
+   "垃圾桶",
+   "花盆",
+   "桌子上"
+  ],
+  "answer": "垃圾桶",
+  "hint": null
+ },
+ {
+  "id": "k_042",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "common",
+  "type": "single_choice",
+  "title": "发现着火了，应该打哪个电话？",
+  "options": [
+   "119",
+   "110",
+   "120"
+  ],
+  "answer": "119",
+  "hint": null
+ },
+ {
+  "id": "k_043",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "common",
+  "type": "single_choice",
+  "title": "遇到坏人，应该打哪个电话？",
+  "options": [
+   "110",
+   "119",
+   "114"
+  ],
+  "answer": "110",
+  "hint": null
+ },
+ {
+  "id": "k_044",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "common",
+  "type": "true_false",
+  "title": "饭前便后要洗手。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "k_045",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "common",
+  "type": "true_false",
+  "title": "可以随便跟陌生人走。",
+  "options": [],
+  "answer": "错",
+  "hint": "不能跟陌生人走"
+ },
+ {
+  "id": "k_046",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "common",
+  "type": "true_false",
+  "title": "红灯停，绿灯行。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "k_047",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "common",
+  "type": "fill_blank",
+  "title": "生病了应该告诉谁？（答一个就行）",
+  "options": [],
+  "answer": "家长|妈妈|爸爸|老师|爸爸妈妈",
+  "hint": null
+ },
+ {
+  "id": "k_048",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "common",
+  "type": "fill_blank",
+  "title": "早晨太阳升起来，晚上太阳会____（提示：落下去）",
+  "options": [],
+  "answer": "落山|下山|落下|落下去|落",
+  "hint": null
+ },
+ {
+  "id": "k_049",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "color",
+  "type": "single_choice",
+  "title": "草地是什么颜色？",
+  "options": [
+   "绿色",
+   "红色",
+   "黄色"
+  ],
+  "answer": "绿色",
+  "hint": null
+ },
+ {
+  "id": "k_050",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "color",
+  "type": "single_choice",
+  "title": "雪是什么颜色？",
+  "options": [
+   "白色",
+   "黑色",
+   "蓝色"
+  ],
+  "answer": "白色",
+  "hint": null
+ },
+ {
+  "id": "k_051",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "color",
+  "type": "single_choice",
+  "title": "西红柿是什么颜色？",
+  "options": [
+   "红色",
+   "紫色",
+   "白色"
+  ],
+  "answer": "红色",
+  "hint": null
+ },
+ {
+  "id": "k_052",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "shape",
+  "type": "single_choice",
+  "title": "三角形有几条边？",
+  "options": [
+   "2条",
+   "3条",
+   "4条"
+  ],
+  "answer": "3条",
+  "hint": null
+ },
+ {
+  "id": "k_053",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "shape",
+  "type": "single_choice",
+  "title": "正方形有几条边？",
+  "options": [
+   "3条",
+   "4条",
+   "5条"
+  ],
+  "answer": "4条",
+  "hint": null
+ },
+ {
+  "id": "k_054",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "shape",
+  "type": "single_choice",
+  "title": "皮球是什么形状？",
+  "options": [
+   "球形",
+   "方形",
+   "锥形"
+  ],
+  "answer": "球形",
+  "hint": null
+ },
+ {
+  "id": "k_055",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "shape",
+  "type": "true_false",
+  "title": "香蕉是弯弯的。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "k_056",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "shape",
+  "type": "true_false",
+  "title": "轮子是圆的，所以能滚动。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "k_057",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "color",
+  "type": "fill_blank",
+  "title": "红灯停，绿灯____。",
+  "options": [],
+  "answer": "行|通行|走",
+  "hint": null
+ },
+ {
+  "id": "k_058",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "shape",
+  "type": "fill_blank",
+  "title": "圆形和方形积木中，能滚动的是____积木。",
+  "options": [],
+  "answer": "圆形|圆|球形|球",
+  "hint": null
+ },
+ {
+  "id": "k_059",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "nursery",
+  "type": "single_choice",
+  "title": "《小星星》里“一闪一闪亮晶晶，满天都是____”？",
+  "options": [
+   "小星星",
+   "小兔子",
+   "小花"
+  ],
+  "answer": "小星星",
+  "hint": null
+ },
+ {
+  "id": "k_060",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "nursery",
+  "type": "single_choice",
+  "title": "《两只老虎》里跑得快的是什么动物？",
+  "options": [
+   "老虎",
+   "大象",
+   "乌龟"
+  ],
+  "answer": "老虎",
+  "hint": null
+ },
+ {
+  "id": "k_061",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "nursery",
+  "type": "single_choice",
+  "title": "《数鸭子》里门前大桥下，游过一群什么？",
+  "options": [
+   "鸭",
+   "鱼",
+   "鹅"
+  ],
+  "answer": "鸭",
+  "hint": null
+ },
+ {
+  "id": "k_062",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "nursery",
+  "type": "single_choice",
+  "title": "《拔萝卜》里第一个来拔萝卜的是谁？",
+  "options": [
+   "老公公",
+   "小狗",
+   "小猫"
+  ],
+  "answer": "老公公",
+  "hint": null
+ },
+ {
+  "id": "k_063",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "nursery",
+  "type": "single_choice",
+  "title": "《找朋友》里“敬个礼呀握握手，你是我的____”？",
+  "options": [
+   "好朋友",
+   "坏朋友",
+   "陌生人"
+  ],
+  "answer": "好朋友",
+  "hint": null
+ },
+ {
+  "id": "k_064",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "nursery",
+  "type": "true_false",
+  "title": "《小燕子》这首歌唱的是春天。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "k_065",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "nursery",
+  "type": "true_false",
+  "title": "《世上只有妈妈好》唱的是爸爸。",
+  "options": [],
+  "answer": "错",
+  "hint": "唱的是妈妈"
+ },
+ {
+  "id": "k_066",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "nursery",
+  "type": "fill_blank",
+  "title": "“一闪一闪亮晶晶，满天都是____”。",
+  "options": [],
+  "answer": "小星星|星星",
+  "hint": null
+ },
+ {
+  "id": "k_067",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "nursery",
+  "type": "fill_blank",
+  "title": "“门前大桥下，游过一群____”。",
+  "options": [],
+  "answer": "鸭|鸭子",
+  "hint": null
+ },
+ {
+  "id": "k_068",
+  "level": "kindergarten",
+  "grade": null,
+  "subject": "nursery",
+  "type": "fill_blank",
+  "title": "“世上只有妈妈____”。",
+  "options": [],
+  "answer": "好",
+  "hint": null
+ }
 ]

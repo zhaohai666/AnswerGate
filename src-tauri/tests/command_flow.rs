@@ -249,7 +249,7 @@ fn seed_banks_load_through_app_state() {
     let bank_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../resources/question_bank");
     let st = AppState::new(dir.path().to_path_buf(), &bank_dir).unwrap();
-    assert_eq!(st.bank.len(), 48, "种子题库应为 16×3=48 题");
+    assert_eq!(st.bank.len(), 284, "种子题库应为 68+106+110=284 题");
     // 每学段均可抽满 5 题且题型混合
     for level in Level::ALL {
         let paper = answergate_lib::quiz::make_paper(&st.bank, level, 5, false).unwrap();

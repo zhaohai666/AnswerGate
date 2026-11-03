@@ -1,18 +1,1396 @@
 [
-  { "id": "p_001", "level": "primary", "grade": null, "subject": "math", "type": "single_choice", "title": "3+5等于几？", "options": ["6", "8", "9"], "answer": "8", "hint": "3往后数5个数" },
-  { "id": "p_002", "level": "primary", "grade": null, "subject": "math", "type": "single_choice", "title": "12×3等于几？", "options": ["36", "32", "38"], "answer": "36", "hint": null },
-  { "id": "p_003", "level": "primary", "grade": null, "subject": "math", "type": "single_choice", "title": "100以内最大的偶数是多少？", "options": ["98", "99", "100"], "answer": "98", "hint": null },
-  { "id": "p_004", "level": "primary", "grade": null, "subject": "math", "type": "single_choice", "title": "正方形有几条对称轴？", "options": ["2条", "4条", "8条"], "answer": "4条", "hint": null },
-  { "id": "p_005", "level": "primary", "grade": null, "subject": "chinese", "type": "single_choice", "title": "《静夜思》的作者是谁？", "options": ["李白", "杜甫", "白居易"], "answer": "李白", "hint": null },
-  { "id": "p_006", "level": "primary", "grade": null, "subject": "chinese", "type": "single_choice", "title": "“床前明月光”的下一句是？", "options": ["疑是地上霜", "低头思故乡", "举头望明月"], "answer": "疑是地上霜", "hint": null },
-  { "id": "p_007", "level": "primary", "grade": null, "subject": "english", "type": "single_choice", "title": "apple 的中文意思是？", "options": ["苹果", "香蕉", "橘子"], "answer": "苹果", "hint": null },
-  { "id": "p_008", "level": "primary", "grade": null, "subject": "english", "type": "single_choice", "title": "book 的中文意思是？", "options": ["书", "笔", "包"], "answer": "书", "hint": null },
-  { "id": "p_009", "level": "primary", "grade": null, "subject": "science", "type": "single_choice", "title": "地球围绕着什么转？", "options": ["太阳", "月亮", "火星"], "answer": "太阳", "hint": null },
-  { "id": "p_010", "level": "primary", "grade": null, "subject": "math", "type": "true_false", "title": "0乘任何数都等于0。", "options": [], "answer": "对", "hint": null },
-  { "id": "p_011", "level": "primary", "grade": null, "subject": "chinese", "type": "true_false", "title": "《西游记》的作者是罗贯中。", "options": [], "answer": "错", "hint": "作者是吴承恩" },
-  { "id": "p_012", "level": "primary", "grade": null, "subject": "science", "type": "true_false", "title": "水加热到100摄氏度会沸腾。", "options": [], "answer": "对", "hint": null },
-  { "id": "p_013", "level": "primary", "grade": null, "subject": "math", "type": "fill_blank", "title": "7×8等于几？", "options": [], "answer": "56|五十六", "hint": null },
-  { "id": "p_014", "level": "primary", "grade": null, "subject": "chinese", "type": "fill_blank", "title": "“欲穷千里目”的下一句是什么？", "options": [], "answer": "更上一层楼", "hint": null },
-  { "id": "p_015", "level": "primary", "grade": null, "subject": "english", "type": "fill_blank", "title": "cat 的中文意思是？（写中文）", "options": [], "answer": "猫", "hint": null },
-  { "id": "p_016", "level": "primary", "grade": null, "subject": "math", "type": "fill_blank", "title": "一个星期有几天？（填数字）", "options": [], "answer": "7|七|七天|七日", "hint": null }
+ {
+  "id": "p_001",
+  "level": "primary",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "3+5等于几？",
+  "options": [
+   "6",
+   "8",
+   "9"
+  ],
+  "answer": "8",
+  "hint": "3往后数5个数"
+ },
+ {
+  "id": "p_002",
+  "level": "primary",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "12×3等于几？",
+  "options": [
+   "36",
+   "32",
+   "38"
+  ],
+  "answer": "36",
+  "hint": null
+ },
+ {
+  "id": "p_003",
+  "level": "primary",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "100以内最大的偶数是多少？",
+  "options": [
+   "98",
+   "99",
+   "100"
+  ],
+  "answer": "98",
+  "hint": null
+ },
+ {
+  "id": "p_004",
+  "level": "primary",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "正方形有几条对称轴？",
+  "options": [
+   "2条",
+   "4条",
+   "8条"
+  ],
+  "answer": "4条",
+  "hint": null
+ },
+ {
+  "id": "p_005",
+  "level": "primary",
+  "grade": null,
+  "subject": "chinese",
+  "type": "single_choice",
+  "title": "《静夜思》的作者是谁？",
+  "options": [
+   "李白",
+   "杜甫",
+   "白居易"
+  ],
+  "answer": "李白",
+  "hint": null
+ },
+ {
+  "id": "p_006",
+  "level": "primary",
+  "grade": null,
+  "subject": "chinese",
+  "type": "single_choice",
+  "title": "“床前明月光”的下一句是？",
+  "options": [
+   "疑是地上霜",
+   "低头思故乡",
+   "举头望明月"
+  ],
+  "answer": "疑是地上霜",
+  "hint": null
+ },
+ {
+  "id": "p_007",
+  "level": "primary",
+  "grade": null,
+  "subject": "english",
+  "type": "single_choice",
+  "title": "apple 的中文意思是？",
+  "options": [
+   "苹果",
+   "香蕉",
+   "橘子"
+  ],
+  "answer": "苹果",
+  "hint": null
+ },
+ {
+  "id": "p_008",
+  "level": "primary",
+  "grade": null,
+  "subject": "english",
+  "type": "single_choice",
+  "title": "book 的中文意思是？",
+  "options": [
+   "书",
+   "笔",
+   "包"
+  ],
+  "answer": "书",
+  "hint": null
+ },
+ {
+  "id": "p_009",
+  "level": "primary",
+  "grade": null,
+  "subject": "science",
+  "type": "single_choice",
+  "title": "地球围绕着什么转？",
+  "options": [
+   "太阳",
+   "月亮",
+   "火星"
+  ],
+  "answer": "太阳",
+  "hint": null
+ },
+ {
+  "id": "p_010",
+  "level": "primary",
+  "grade": null,
+  "subject": "math",
+  "type": "true_false",
+  "title": "0乘任何数都等于0。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "p_011",
+  "level": "primary",
+  "grade": null,
+  "subject": "chinese",
+  "type": "true_false",
+  "title": "《西游记》的作者是罗贯中。",
+  "options": [],
+  "answer": "错",
+  "hint": "作者是吴承恩"
+ },
+ {
+  "id": "p_012",
+  "level": "primary",
+  "grade": null,
+  "subject": "science",
+  "type": "true_false",
+  "title": "水加热到100摄氏度会沸腾。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "p_013",
+  "level": "primary",
+  "grade": null,
+  "subject": "math",
+  "type": "fill_blank",
+  "title": "7×8等于几？",
+  "options": [],
+  "answer": "56|五十六",
+  "hint": null
+ },
+ {
+  "id": "p_014",
+  "level": "primary",
+  "grade": null,
+  "subject": "chinese",
+  "type": "fill_blank",
+  "title": "“欲穷千里目”的下一句是什么？",
+  "options": [],
+  "answer": "更上一层楼",
+  "hint": null
+ },
+ {
+  "id": "p_015",
+  "level": "primary",
+  "grade": null,
+  "subject": "english",
+  "type": "fill_blank",
+  "title": "cat 的中文意思是？（写中文）",
+  "options": [],
+  "answer": "猫",
+  "hint": null
+ },
+ {
+  "id": "p_016",
+  "level": "primary",
+  "grade": null,
+  "subject": "math",
+  "type": "fill_blank",
+  "title": "一个星期有几天？（填数字）",
+  "options": [],
+  "answer": "7|七|七天|七日",
+  "hint": null
+ },
+ {
+  "id": "p_017",
+  "level": "primary",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "15+27等于多少？",
+  "options": [
+   "42",
+   "41",
+   "32"
+  ],
+  "answer": "42",
+  "hint": null
+ },
+ {
+  "id": "p_018",
+  "level": "primary",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "63-28等于多少？",
+  "options": [
+   "35",
+   "45",
+   "25"
+  ],
+  "answer": "35",
+  "hint": null
+ },
+ {
+  "id": "p_019",
+  "level": "primary",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "6×7等于多少？",
+  "options": [
+   "42",
+   "48",
+   "36"
+  ],
+  "answer": "42",
+  "hint": null
+ },
+ {
+  "id": "p_020",
+  "level": "primary",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "81÷9等于多少？",
+  "options": [
+   "8",
+   "9",
+   "7"
+  ],
+  "answer": "9",
+  "hint": null
+ },
+ {
+  "id": "p_021",
+  "level": "primary",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "1/2 + 1/4 等于多少？",
+  "options": [
+   "3/4",
+   "2/6",
+   "1/6"
+  ],
+  "answer": "3/4",
+  "hint": "先通分成1/4+2/4"
+ },
+ {
+  "id": "p_022",
+  "level": "primary",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "三角形的内角和是多少度？",
+  "options": [
+   "180度",
+   "360度",
+   "90度"
+  ],
+  "answer": "180度",
+  "hint": null
+ },
+ {
+  "id": "p_023",
+  "level": "primary",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "3.5 + 2.5 = ？",
+  "options": [
+   "6",
+   "5.5",
+   "6.5"
+  ],
+  "answer": "6",
+  "hint": null
+ },
+ {
+  "id": "p_024",
+  "level": "primary",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "25×4等于多少？",
+  "options": [
+   "100",
+   "90",
+   "50"
+  ],
+  "answer": "100",
+  "hint": null
+ },
+ {
+  "id": "p_025",
+  "level": "primary",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "下面哪个数比0.8大？",
+  "options": [
+   "0.75",
+   "0.9",
+   "0.79"
+  ],
+  "answer": "0.9",
+  "hint": null
+ },
+ {
+  "id": "p_026",
+  "level": "primary",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "时钟3点整，时针和分针的夹角是多少度？",
+  "options": [
+   "90度",
+   "60度",
+   "120度"
+  ],
+  "answer": "90度",
+  "hint": null
+ },
+ {
+  "id": "p_027",
+  "level": "primary",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "最小的质数是几？",
+  "options": [
+   "1",
+   "2",
+   "3"
+  ],
+  "answer": "2",
+  "hint": "1不是质数"
+ },
+ {
+  "id": "p_028",
+  "level": "primary",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "1000克等于多少千克？",
+  "options": [
+   "1千克",
+   "10千克",
+   "100千克"
+  ],
+  "answer": "1千克",
+  "hint": null
+ },
+ {
+  "id": "p_029",
+  "level": "primary",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "长方形长8厘米、宽5厘米，周长是多少厘米？",
+  "options": [
+   "26",
+   "40",
+   "13"
+  ],
+  "answer": "26",
+  "hint": "(长+宽)×2"
+ },
+ {
+  "id": "p_030",
+  "level": "primary",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "48÷6等于多少？",
+  "options": [
+   "7",
+   "8",
+   "9"
+  ],
+  "answer": "8",
+  "hint": null
+ },
+ {
+  "id": "p_031",
+  "level": "primary",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "一年中有几个月是31天（大月）？",
+  "options": [
+   "6个",
+   "7个",
+   "8个"
+  ],
+  "answer": "7个",
+  "hint": null
+ },
+ {
+  "id": "p_032",
+  "level": "primary",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "0.5化成分数是多少？",
+  "options": [
+   "1/2",
+   "1/5",
+   "2/5"
+  ],
+  "answer": "1/2",
+  "hint": null
+ },
+ {
+  "id": "p_033",
+  "level": "primary",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "12和18的最大公因数是多少？",
+  "options": [
+   "6",
+   "3",
+   "9"
+  ],
+  "answer": "6",
+  "hint": null
+ },
+ {
+  "id": "p_034",
+  "level": "primary",
+  "grade": null,
+  "subject": "math",
+  "type": "single_choice",
+  "title": "100以内最大的质数是多少？",
+  "options": [
+   "97",
+   "99",
+   "91"
+  ],
+  "answer": "97",
+  "hint": null
+ },
+ {
+  "id": "p_035",
+  "level": "primary",
+  "grade": null,
+  "subject": "math",
+  "type": "true_false",
+  "title": "两个奇数相加的和一定是偶数。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "p_036",
+  "level": "primary",
+  "grade": null,
+  "subject": "math",
+  "type": "true_false",
+  "title": "所有的偶数都能被2整除。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "p_037",
+  "level": "primary",
+  "grade": null,
+  "subject": "math",
+  "type": "true_false",
+  "title": "0是最小的自然数。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "p_038",
+  "level": "primary",
+  "grade": null,
+  "subject": "math",
+  "type": "true_false",
+  "title": "圆的周长与直径的比值是圆周率π。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "p_039",
+  "level": "primary",
+  "grade": null,
+  "subject": "math",
+  "type": "true_false",
+  "title": "一条射线长5厘米。",
+  "options": [],
+  "answer": "错",
+  "hint": "射线无限长，不能量长度"
+ },
+ {
+  "id": "p_040",
+  "level": "primary",
+  "grade": null,
+  "subject": "math",
+  "type": "true_false",
+  "title": "1米等于100厘米。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "p_041",
+  "level": "primary",
+  "grade": null,
+  "subject": "math",
+  "type": "fill_blank",
+  "title": "9×9等于多少？（填数字）",
+  "options": [],
+  "answer": "81|八十一",
+  "hint": null
+ },
+ {
+  "id": "p_042",
+  "level": "primary",
+  "grade": null,
+  "subject": "math",
+  "type": "fill_blank",
+  "title": "120÷4等于多少？（填数字）",
+  "options": [],
+  "answer": "30|三十",
+  "hint": null
+ },
+ {
+  "id": "p_043",
+  "level": "primary",
+  "grade": null,
+  "subject": "math",
+  "type": "fill_blank",
+  "title": "一个数加上25等于60，这个数是多少？",
+  "options": [],
+  "answer": "35|三十五",
+  "hint": null
+ },
+ {
+  "id": "p_044",
+  "level": "primary",
+  "grade": null,
+  "subject": "math",
+  "type": "fill_blank",
+  "title": "3.2 + 1.8 = ？",
+  "options": [],
+  "answer": "5|5.0",
+  "hint": null
+ },
+ {
+  "id": "p_045",
+  "level": "primary",
+  "grade": null,
+  "subject": "math",
+  "type": "fill_blank",
+  "title": "正方形边长6厘米，面积是多少平方厘米？（填数字）",
+  "options": [],
+  "answer": "36|三十六",
+  "hint": null
+ },
+ {
+  "id": "p_046",
+  "level": "primary",
+  "grade": null,
+  "subject": "math",
+  "type": "fill_blank",
+  "title": "2、4、6、8，下一个偶数是多少？",
+  "options": [],
+  "answer": "10|十",
+  "hint": null
+ },
+ {
+  "id": "p_047",
+  "level": "primary",
+  "grade": null,
+  "subject": "chinese",
+  "type": "single_choice",
+  "title": "“春眠不觉晓”的下一句是？",
+  "options": [
+   "处处闻啼鸟",
+   "花落知多少",
+   "夜来风雨声"
+  ],
+  "answer": "处处闻啼鸟",
+  "hint": null
+ },
+ {
+  "id": "p_048",
+  "level": "primary",
+  "grade": null,
+  "subject": "chinese",
+  "type": "single_choice",
+  "title": "成语“守株待兔”中的“株”是指什么？",
+  "options": [
+   "树桩",
+   "树木",
+   "小草"
+  ],
+  "answer": "树桩",
+  "hint": null
+ },
+ {
+  "id": "p_049",
+  "level": "primary",
+  "grade": null,
+  "subject": "chinese",
+  "type": "single_choice",
+  "title": "《咏鹅》的作者是谁？",
+  "options": [
+   "骆宾王",
+   "李白",
+   "王维"
+  ],
+  "answer": "骆宾王",
+  "hint": null
+ },
+ {
+  "id": "p_050",
+  "level": "primary",
+  "grade": null,
+  "subject": "chinese",
+  "type": "single_choice",
+  "title": "“日”字加一笔，可以变成哪个字？",
+  "options": [
+   "目",
+   "田",
+   "月"
+  ],
+  "answer": "目",
+  "hint": null
+ },
+ {
+  "id": "p_051",
+  "level": "primary",
+  "grade": null,
+  "subject": "chinese",
+  "type": "single_choice",
+  "title": "“高大”的反义词是什么？",
+  "options": [
+   "矮小",
+   "巨大",
+   "长大"
+  ],
+  "answer": "矮小",
+  "hint": null
+ },
+ {
+  "id": "p_052",
+  "level": "primary",
+  "grade": null,
+  "subject": "chinese",
+  "type": "single_choice",
+  "title": "小蝌蚪长大后会变成什么？",
+  "options": [
+   "青蛙",
+   "蟾蜍",
+   "鱼"
+  ],
+  "answer": "青蛙",
+  "hint": null
+ },
+ {
+  "id": "p_053",
+  "level": "primary",
+  "grade": null,
+  "subject": "chinese",
+  "type": "single_choice",
+  "title": "一年中的第一个季节是？",
+  "options": [
+   "春天",
+   "夏天",
+   "秋天"
+  ],
+  "answer": "春天",
+  "hint": null
+ },
+ {
+  "id": "p_054",
+  "level": "primary",
+  "grade": null,
+  "subject": "chinese",
+  "type": "single_choice",
+  "title": "成语“画蛇添足”的意思是？",
+  "options": [
+   "多此一举",
+   "雪中送炭",
+   "锦上添花"
+  ],
+  "answer": "多此一举",
+  "hint": null
+ },
+ {
+  "id": "p_055",
+  "level": "primary",
+  "grade": null,
+  "subject": "chinese",
+  "type": "single_choice",
+  "title": "“夜来风雨声，花落知多少”出自哪首诗？",
+  "options": [
+   "《春晓》",
+   "《静夜思》",
+   "《咏柳》"
+  ],
+  "answer": "《春晓》",
+  "hint": null
+ },
+ {
+  "id": "p_056",
+  "level": "primary",
+  "grade": null,
+  "subject": "chinese",
+  "type": "single_choice",
+  "title": "汉字“森”里有几个“木”？",
+  "options": [
+   "2个",
+   "3个",
+   "4个"
+  ],
+  "answer": "3个",
+  "hint": null
+ },
+ {
+  "id": "p_057",
+  "level": "primary",
+  "grade": null,
+  "subject": "chinese",
+  "type": "single_choice",
+  "title": "《望庐山瀑布》的作者是谁？",
+  "options": [
+   "李白",
+   "杜甫",
+   "白居易"
+  ],
+  "answer": "李白",
+  "hint": null
+ },
+ {
+  "id": "p_058",
+  "level": "primary",
+  "grade": null,
+  "subject": "chinese",
+  "type": "single_choice",
+  "title": "妈妈的妈妈应该叫什么？",
+  "options": [
+   "外婆",
+   "奶奶",
+   "姑姑"
+  ],
+  "answer": "外婆",
+  "hint": null
+ },
+ {
+  "id": "p_059",
+  "level": "primary",
+  "grade": null,
+  "subject": "chinese",
+  "type": "true_false",
+  "title": "《三字经》的开头是“人之初，性本善”。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "p_060",
+  "level": "primary",
+  "grade": null,
+  "subject": "chinese",
+  "type": "true_false",
+  "title": "“纸上得来终觉浅，绝知此事要躬行”强调要亲自实践。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "p_061",
+  "level": "primary",
+  "grade": null,
+  "subject": "chinese",
+  "type": "true_false",
+  "title": "拼音字母 b 和 d 的形状完全一样。",
+  "options": [],
+  "answer": "错",
+  "hint": "一个圆在左一个圆在右"
+ },
+ {
+  "id": "p_062",
+  "level": "primary",
+  "grade": null,
+  "subject": "chinese",
+  "type": "true_false",
+  "title": "《水浒传》讲的是梁山一百零八好汉的故事。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "p_063",
+  "level": "primary",
+  "grade": null,
+  "subject": "chinese",
+  "type": "true_false",
+  "title": "写汉字时笔顺一般是从右往左写。",
+  "options": [],
+  "answer": "错",
+  "hint": "一般是从上到下、从左到右"
+ },
+ {
+  "id": "p_064",
+  "level": "primary",
+  "grade": null,
+  "subject": "chinese",
+  "type": "true_false",
+  "title": "“安”字的上面是宝盖头。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "p_065",
+  "level": "primary",
+  "grade": null,
+  "subject": "chinese",
+  "type": "fill_blank",
+  "title": "“欲穷千里目”的上一句是什么？",
+  "options": [],
+  "answer": "黄河入海流",
+  "hint": null
+ },
+ {
+  "id": "p_066",
+  "level": "primary",
+  "grade": null,
+  "subject": "chinese",
+  "type": "fill_blank",
+  "title": "成语填空：井底之____。",
+  "options": [],
+  "answer": "蛙",
+  "hint": null
+ },
+ {
+  "id": "p_067",
+  "level": "primary",
+  "grade": null,
+  "subject": "chinese",
+  "type": "fill_blank",
+  "title": "“举头望明月”的下一句是什么？",
+  "options": [],
+  "answer": "低头思故乡",
+  "hint": null
+ },
+ {
+  "id": "p_068",
+  "level": "primary",
+  "grade": null,
+  "subject": "chinese",
+  "type": "fill_blank",
+  "title": "一年有四季：春、夏、秋、____。",
+  "options": [],
+  "answer": "冬",
+  "hint": null
+ },
+ {
+  "id": "p_069",
+  "level": "primary",
+  "grade": null,
+  "subject": "chinese",
+  "type": "fill_blank",
+  "title": "成语填空：花红柳____。",
+  "options": [],
+  "answer": "绿",
+  "hint": null
+ },
+ {
+  "id": "p_070",
+  "level": "primary",
+  "grade": null,
+  "subject": "chinese",
+  "type": "fill_blank",
+  "title": "《悯农》里“谁知盘中餐”的下一句是什么？",
+  "options": [],
+  "answer": "粒粒皆辛苦",
+  "hint": null
+ },
+ {
+  "id": "p_071",
+  "level": "primary",
+  "grade": null,
+  "subject": "english",
+  "type": "single_choice",
+  "title": "dog 的中文意思是？",
+  "options": [
+   "狗",
+   "猫",
+   "鸟"
+  ],
+  "answer": "狗",
+  "hint": null
+ },
+ {
+  "id": "p_072",
+  "level": "primary",
+  "grade": null,
+  "subject": "english",
+  "type": "single_choice",
+  "title": "red 是什么颜色？",
+  "options": [
+   "红色",
+   "蓝色",
+   "绿色"
+  ],
+  "answer": "红色",
+  "hint": null
+ },
+ {
+  "id": "p_073",
+  "level": "primary",
+  "grade": null,
+  "subject": "english",
+  "type": "single_choice",
+  "title": "“How are you?” 可以怎么回答？",
+  "options": [
+   "I'm fine, thank you.",
+   "Goodbye.",
+   "Sorry."
+  ],
+  "answer": "I'm fine, thank you.",
+  "hint": null
+ },
+ {
+  "id": "p_074",
+  "level": "primary",
+  "grade": null,
+  "subject": "english",
+  "type": "single_choice",
+  "title": "two + three = ？（用英文单词）",
+  "options": [
+   "four",
+   "five",
+   "six"
+  ],
+  "answer": "five",
+  "hint": null
+ },
+ {
+  "id": "p_075",
+  "level": "primary",
+  "grade": null,
+  "subject": "english",
+  "type": "single_choice",
+  "title": "teacher 的中文意思是？",
+  "options": [
+   "老师",
+   "医生",
+   "警察"
+  ],
+  "answer": "老师",
+  "hint": null
+ },
+ {
+  "id": "p_076",
+  "level": "primary",
+  "grade": null,
+  "subject": "english",
+  "type": "single_choice",
+  "title": "“苹果”的英文是什么？",
+  "options": [
+   "apple",
+   "orange",
+   "banana"
+  ],
+  "answer": "apple",
+  "hint": null
+ },
+ {
+  "id": "p_077",
+  "level": "primary",
+  "grade": null,
+  "subject": "english",
+  "type": "single_choice",
+  "title": "Monday 是一周的第几天（英语习惯）？",
+  "options": [
+   "第一天",
+   "第二天",
+   "最后一天"
+  ],
+  "answer": "第一天",
+  "hint": null
+ },
+ {
+  "id": "p_078",
+  "level": "primary",
+  "grade": null,
+  "subject": "english",
+  "type": "single_choice",
+  "title": "weather 的中文意思是？",
+  "options": [
+   "天气",
+   "水",
+   "风"
+  ],
+  "answer": "天气",
+  "hint": null
+ },
+ {
+  "id": "p_079",
+  "level": "primary",
+  "grade": null,
+  "subject": "english",
+  "type": "single_choice",
+  "title": "“谢谢”用英语怎么说？",
+  "options": [
+   "Thank you",
+   "Sorry",
+   "Hello"
+  ],
+  "answer": "Thank you",
+  "hint": null
+ },
+ {
+  "id": "p_080",
+  "level": "primary",
+  "grade": null,
+  "subject": "english",
+  "type": "single_choice",
+  "title": "big 的反义词是什么？",
+  "options": [
+   "small",
+   "tall",
+   "long"
+  ],
+  "answer": "small",
+  "hint": null
+ },
+ {
+  "id": "p_081",
+  "level": "primary",
+  "grade": null,
+  "subject": "english",
+  "type": "true_false",
+  "title": "book 和 books 都和“书”有关，books 是复数。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "p_082",
+  "level": "primary",
+  "grade": null,
+  "subject": "english",
+  "type": "true_false",
+  "title": "英语字母一共有26个。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "p_083",
+  "level": "primary",
+  "grade": null,
+  "subject": "english",
+  "type": "true_false",
+  "title": "“Good morning”是晚上打招呼用的。",
+  "options": [],
+  "answer": "错",
+  "hint": "是早上用的"
+ },
+ {
+  "id": "p_084",
+  "level": "primary",
+  "grade": null,
+  "subject": "english",
+  "type": "true_false",
+  "title": "cat 的意思是狗。",
+  "options": [],
+  "answer": "错",
+  "hint": "cat是猫"
+ },
+ {
+  "id": "p_085",
+  "level": "primary",
+  "grade": null,
+  "subject": "english",
+  "type": "fill_blank",
+  "title": "“二”的英文单词是？（写英文）",
+  "options": [],
+  "answer": "two",
+  "hint": null
+ },
+ {
+  "id": "p_086",
+  "level": "primary",
+  "grade": null,
+  "subject": "english",
+  "type": "fill_blank",
+  "title": "“再见”用英语说，以 g 开头（写英文）",
+  "options": [],
+  "answer": "goodbye|good bye|bye",
+  "hint": null
+ },
+ {
+  "id": "p_087",
+  "level": "primary",
+  "grade": null,
+  "subject": "english",
+  "type": "fill_blank",
+  "title": "seven 的中文意思是？（写中文）",
+  "options": [],
+  "answer": "7|七",
+  "hint": null
+ },
+ {
+  "id": "p_088",
+  "level": "primary",
+  "grade": null,
+  "subject": "english",
+  "type": "fill_blank",
+  "title": "“眼睛”的英文单词（单数）是？（写英文）",
+  "options": [],
+  "answer": "eye",
+  "hint": null
+ },
+ {
+  "id": "p_089",
+  "level": "primary",
+  "grade": null,
+  "subject": "english",
+  "type": "fill_blank",
+  "title": "water 的中文意思是？（写中文）",
+  "options": [],
+  "answer": "水",
+  "hint": null
+ },
+ {
+  "id": "p_090",
+  "level": "primary",
+  "grade": null,
+  "subject": "english",
+  "type": "fill_blank",
+  "title": "yellow 是什么颜色？（写中文）",
+  "options": [],
+  "answer": "黄色",
+  "hint": null
+ },
+ {
+  "id": "p_091",
+  "level": "primary",
+  "grade": null,
+  "subject": "science",
+  "type": "single_choice",
+  "title": "植物生长需要什么？",
+  "options": [
+   "阳光和水",
+   "巧克力和糖",
+   "玩具"
+  ],
+  "answer": "阳光和水",
+  "hint": null
+ },
+ {
+  "id": "p_092",
+  "level": "primary",
+  "grade": null,
+  "subject": "science",
+  "type": "single_choice",
+  "title": "彩虹一般有几种颜色？",
+  "options": [
+   "7种",
+   "5种",
+   "3种"
+  ],
+  "answer": "7种",
+  "hint": null
+ },
+ {
+  "id": "p_093",
+  "level": "primary",
+  "grade": null,
+  "subject": "science",
+  "type": "single_choice",
+  "title": "磁铁能吸住下面哪种东西？",
+  "options": [
+   "铁钉",
+   "木头",
+   "塑料尺"
+  ],
+  "answer": "铁钉",
+  "hint": null
+ },
+ {
+  "id": "p_094",
+  "level": "primary",
+  "grade": null,
+  "subject": "science",
+  "type": "single_choice",
+  "title": "小蝌蚪长成青蛙，这属于动物的什么现象？",
+  "options": [
+   "生长变化",
+   "冬眠",
+   "迁徙"
+  ],
+  "answer": "生长变化",
+  "hint": null
+ },
+ {
+  "id": "p_095",
+  "level": "primary",
+  "grade": null,
+  "subject": "science",
+  "type": "single_choice",
+  "title": "空气看不见摸不着，它存在吗？",
+  "options": [
+   "存在",
+   "不存在",
+   "只有白天存在"
+  ],
+  "answer": "存在",
+  "hint": null
+ },
+ {
+  "id": "p_096",
+  "level": "primary",
+  "grade": null,
+  "subject": "science",
+  "type": "single_choice",
+  "title": "月亮的光是从哪里来的？",
+  "options": [
+   "反射太阳光",
+   "自己发光",
+   "反射地球光"
+  ],
+  "answer": "反射太阳光",
+  "hint": null
+ },
+ {
+  "id": "p_097",
+  "level": "primary",
+  "grade": null,
+  "subject": "science",
+  "type": "single_choice",
+  "title": "种子发芽时最先长出的是？",
+  "options": [
+   "根",
+   "叶子",
+   "花"
+  ],
+  "answer": "根",
+  "hint": null
+ },
+ {
+  "id": "p_098",
+  "level": "primary",
+  "grade": null,
+  "subject": "science",
+  "type": "single_choice",
+  "title": "下面哪种动物是哺乳动物？",
+  "options": [
+   "鲸鱼",
+   "鲨鱼",
+   "鳄鱼"
+  ],
+  "answer": "鲸鱼",
+  "hint": "鲸鱼用肺呼吸、胎生哺乳"
+ },
+ {
+  "id": "p_099",
+  "level": "primary",
+  "grade": null,
+  "subject": "science",
+  "type": "true_false",
+  "title": "水有三种形态：冰、水、水蒸气。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "p_100",
+  "level": "primary",
+  "grade": null,
+  "subject": "science",
+  "type": "true_false",
+  "title": "植物在晚上也在进行呼吸作用。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "p_101",
+  "level": "primary",
+  "grade": null,
+  "subject": "science",
+  "type": "true_false",
+  "title": "太阳是一颗行星。",
+  "options": [],
+  "answer": "错",
+  "hint": "太阳是恒星"
+ },
+ {
+  "id": "p_102",
+  "level": "primary",
+  "grade": null,
+  "subject": "science",
+  "type": "true_false",
+  "title": "冬天手冷时搓一搓会变暖，是因为摩擦生热。",
+  "options": [],
+  "answer": "对",
+  "hint": null
+ },
+ {
+  "id": "p_103",
+  "level": "primary",
+  "grade": null,
+  "subject": "science",
+  "type": "fill_blank",
+  "title": "水结冰的温度是（填数字）摄氏度。",
+  "options": [],
+  "answer": "0|零",
+  "hint": null
+ },
+ {
+  "id": "p_104",
+  "level": "primary",
+  "grade": null,
+  "subject": "science",
+  "type": "fill_blank",
+  "title": "蝴蝶的一生要经过卵、幼虫、____、成虫四个阶段。",
+  "options": [],
+  "answer": "蛹",
+  "hint": null
+ },
+ {
+  "id": "p_105",
+  "level": "primary",
+  "grade": null,
+  "subject": "science",
+  "type": "fill_blank",
+  "title": "植物的根从土壤里吸收____和养分。",
+  "options": [],
+  "answer": "水|水分",
+  "hint": null
+ },
+ {
+  "id": "p_106",
+  "level": "primary",
+  "grade": null,
+  "subject": "science",
+  "type": "fill_blank",
+  "title": "太阳从东边升起，从____边落下。",
+  "options": [],
+  "answer": "西",
+  "hint": null
+ }
 ]
