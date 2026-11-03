@@ -14,10 +14,22 @@ pub mod unlock;
 
 use tauri::Manager;
 
-/// 解析题库目录：打包后位于 resource_dir；开发/测试回退到仓库相对路径。
+/// 解析题库目录：打包后位于 resource_dir（tauri bundler 会把 "../x" 声明映射为
+/// bundle 内 "_up_/x"，故须探测 _up_ 前缀布局）；开发/测试回退到仓库相对路径。
 fn resolve_bank_dir(handle: &tauri::AppHandle) -> std::path::PathBuf {
     use std::path::PathBuf;
     if let Ok(rd) = handle.path().resource_dir() {
+        // tauri.conf.json bundle.resources 声明为 "../resources/..."，
+        // 打包产物实际位于 Contents/Resources/_up_/resources/question_bank/
+        let bundled_nested = rd.join("_up_").join("resources").join("question_bank");
+        if bundled_nested.is_dir() {
+            return bundled_nested;
+        }
+        let bundled_flat = rd.join("_up_").join("question_bank");
+        if bundled_flat.is_dir() {
+            return bundled_flat;
+        }
+        // 兜底：resources 声明不带 "../" 时的两种布局
         let nested = rd.join("resources").join("question_bank");
         if nested.is_dir() {
             return nested;
