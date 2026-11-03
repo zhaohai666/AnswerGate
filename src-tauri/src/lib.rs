@@ -90,22 +90,27 @@ pub fn run() {
             // 2) 题库/配置/门禁状态
             let bank_dir = resolve_bank_dir(&handle);
             let state = commands::AppState::new(app_data, &bank_dir)?;
-            // 3) 重启恢复：冷却中则立即启动倒计时推送（防重启绕过，PRD P0-06）
-            if state.gate.lock().unwrap().phase == gate::GatePhase::Cooldown {
+            // 3) 判定需启动的计时器（必须在 manage 之前取相位/字段，
+            //    计时器线程内部会 app.state::<AppState>()， manage 后再 spawn）
+            let cooldown_resume =
+                state.gate.lock().unwrap().phase == gate::GatePhase::Cooldown;
+            let using_resume = commands::revalidate_using_on_startup(&state, commands::now());
+            let using_target = if using_resume {
+                state.gate.lock().unwrap().managed_target_id.clone()
+            } else {
+                None
+            };
+            app.manage(state);
+            // 4) 重启恢复：冷却中则立即启动倒计时推送（防重启绕过，PRD P0-06）
+            if cooldown_resume {
                 commands::spawn_cooldown_ticker(handle.clone());
             }
-            // 4) v2 重启恢复：使用中则重验句柄/剩余时长，成功则恢复监控（C10）
-            if commands::revalidate_using_on_startup(&state, commands::now()) {
-                let target_id = state
-                    .gate
-                    .lock()
-                    .unwrap()
-                    .managed_target_id
-                    .clone();
-                let round_sec = commands::round_sec_for(&state, target_id.as_deref());
+            // 5) v2 重启恢复：使用中则重验句柄/剩余时长，成功则恢复监控（C10）
+            if using_resume {
+                let managed = handle.state::<commands::AppState>();
+                let round_sec = commands::round_sec_for(&managed, using_target.as_deref());
                 commands::spawn_using_monitor(handle, round_sec);
             }
-            app.manage(state);
             Ok(())
         })
         .on_window_event(|window, event| {
