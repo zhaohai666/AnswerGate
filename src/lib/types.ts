@@ -13,7 +13,11 @@ export type GatePhase =
   | "grading"
   | "passed"
   | "failed"
-  | "cooldown";
+  | "cooldown"
+  | "using";
+
+/** 答题原因（v2：initial=首次 / timeup=超时答题） */
+export type QuizReason = "initial" | "timeup";
 
 /** 下发前端的题目视图（无 answer/hint，防作弊约定） */
 export interface QuizItem {
@@ -82,6 +86,19 @@ export interface GateStateView {
   cooldown_remaining_sec: number;
   selected_target_name: string | null;
   current_level: Level | null;
+  /** 当前答题原因（v2） */
+  quiz_reason: QuizReason;
+  /** 已用轮次数（v2） */
+  round_count: number;
+}
+
+/** 使用中页数据视图（get_monitor_state，v2） */
+export interface MonitorStateView {
+  phase: GatePhase;
+  managed_target_name: string | null;
+  remaining_sec: number;
+  rounds_used: number;
+  warning: boolean;
 }
 
 /** 统一错误结构（Rust AppError 序列化） */

@@ -1,7 +1,8 @@
 <script lang="ts">
   /**
-   * 结果页：通过态（✅ + 启动倒计时 + 失败可重试启动）；失败态（得分对比 +
-   * 剩余重试 + 再试一次；重试耗尽自动进冷却页）（PRD 5.3 ③）
+   * 结果页：通过态（v2 分支——Initial：启动倒计时 → 纳管进使用中页；
+   * Timeup：「继续使用」续期按钮）；失败态（得分对比 + 剩余重试 + 再试一次；
+   * 重试耗尽自动进冷却页）（PRD 5.3 ③）
    */
   import { onDestroy, onMount } from "svelte";
   import {
@@ -10,6 +11,8 @@
     launched,
     launchError,
     launch,
+    extendAndRelaunch,
+    cameFromTimeout,
     retry,
     gotoCooldown,
     backToLevel,
@@ -24,6 +27,7 @@
   $: r = $result;
   $: passLine = $rules ? Math.round($rules.pass_score * 100) : 80;
   $: needCooldown = r !== null && !r.passed && r.remaining_retry === 0;
+  $: isTimeupPass = r !== null && r.passed && $cameFromTimeout;
 
   function startCountdown(): void {
     countdown = 3;
@@ -38,10 +42,13 @@
     }, 1000);
   }
 
-  // 通过态自动开始启动倒计时；失败态触发抖动；重试耗尽 1.6s 后自动进冷却页
+  // Initial 通过态自动开始启动倒计时；Timeup 通过态等待用户点「继续使用」；
+  // 失败态触发抖动；重试耗尽 1.6s 后自动进冷却页
   onMount(() => {
     if (r?.passed) {
-      startCountdown();
+      if (!$cameFromTimeout) {
+        startCountdown();
+      }
     } else if (r) {
       shakeTrigger += 1;
       if (r.remaining_retry === 0) {
@@ -58,9 +65,23 @@
 <main class="container">
   {#if r?.passed}
     <div class="face">✅</div>
-    <h1>校验通过！</h1>
-    {#if $launched}
-      <p class="tip">已启动，本程序即将关闭…</p>
+    {#if isTimeupPass}
+      <!-- v2：超时答题通过 → 续期拉起（不退出应用） -->
+      <h1>答对啦！</h1>
+      <p class="tip">答题通过，可以继续使用目标软件啦！</p>
+      {#if $launchError}
+        <p class="error">续期失败：{$launchError}</p>
+        <div class="actions">
+          <BigButton kind="primary" label="重试继续" on:click={extendAndRelaunch} />
+          <BigButton kind="neutral" label="返回首页" on:click={backToLevel} />
+        </div>
+      {:else}
+        <div class="actions">
+          <BigButton kind="success" label="▶ 继续使用" on:click={extendAndRelaunch} />
+        </div>
+      {/if}
+    {:else if $launched}
+      <p class="tip">已启动，正在进入使用计时…</p>
     {:else if $launchError}
       <p class="error">启动失败：{$launchError}</p>
       <div class="actions">
@@ -68,6 +89,7 @@
         <BigButton kind="neutral" label="返回首页" on:click={backToLevel} />
       </div>
     {:else}
+      <h1>校验通过！</h1>
       <p class="tip">
         即将启动目标软件，<span class="count">{countdown}</span> 秒
       </p>

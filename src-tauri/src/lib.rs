@@ -62,6 +62,7 @@ pub fn run() {
             commands::get_monitor_state,
             commands::stop_monitor,
             commands::confirm_exit,
+            commands::get_active_paper,
             commands::get_gate_state,
             commands::parent_unlock,
         ]);

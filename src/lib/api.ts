@@ -9,6 +9,7 @@ import type {
   GateStateView,
   GradeResult,
   Level,
+  MonitorStateView,
   PaperView,
   RulesSummary,
   TargetAppView,
@@ -46,9 +47,34 @@ export const api = {
     });
   },
 
-  /** 解锁启动目标软件（成功后 Rust 延迟退出应用） */
+  /** 解锁启动目标软件（v2：纳管启动并进入使用中计时，应用保持常驻） */
   launchTarget(): Promise<void> {
     return invoke<void>("launch_target");
+  },
+
+  /** 「继续使用」（v2：超时答题通过后续期拉起，开启新一轮计时） */
+  extendAndRelaunch(): Promise<void> {
+    return invoke<void>("extend_and_relaunch");
+  },
+
+  /** 使用中页数据（仅 Using 态可调，否则 NotUsing） */
+  getMonitorState(): Promise<MonitorStateView> {
+    return invoke<MonitorStateView>("get_monitor_state");
+  },
+
+  /** 「提前结束本轮」：停止监控 → kill 目标 → 回学段页（gate://monitor-stopped 通知） */
+  stopMonitor(): Promise<void> {
+    return invoke<void>("stop_monitor");
+  },
+
+  /** 关窗二次确认后真正退出应用 */
+  confirmExit(): Promise<void> {
+    return invoke<void>("confirm_exit");
+  },
+
+  /** 下发当前活动试卷（v2：超时答题由后端自动开卷，前端经此取题面） */
+  getActivePaper(): Promise<PaperView> {
+    return invoke<PaperView>("get_active_paper");
   },
 
   /** 门禁状态（启动恢复；冷却中返回剩余秒数） */
@@ -71,6 +97,48 @@ export const api = {
   /** 订阅冷却结束 */
   async onCooldownFinished(cb: () => void): Promise<UnlistenFn> {
     return listen("gate://cooldown-finished", () => {
+      cb();
+    });
+  },
+
+  /** 订阅使用中倒计时（Rust 每秒推送，前端不自算；v2） */
+  async onUsingTick(
+    cb: (remainingSec: number, warning: boolean) => void,
+  ): Promise<UnlistenFn> {
+    return listen<{ remaining_sec: number; warning: boolean }>(
+      "gate://using-tick",
+      (event) => {
+        cb(event.payload.remaining_sec, event.payload.warning);
+      },
+    );
+  },
+
+  /** 订阅使用时长到点（后端已 kill 目标 + 置顶 + 自动开超时答题卷；v2） */
+  async onTimeoutReached(
+    cb: (targetName: string) => void,
+  ): Promise<UnlistenFn> {
+    return listen<{ target_name: string }>("gate://timeout-reached", (event) => {
+      cb(event.payload.target_name);
+    });
+  },
+
+  /** 订阅纳管进程意外退出（后端已 abandon 回 Idle，不触发答题；v2） */
+  async onProcessExited(cb: () => void): Promise<UnlistenFn> {
+    return listen("gate://process-exited", () => {
+      cb();
+    });
+  },
+
+  /** 订阅监控停止（stop_monitor 成功后通知，回学段页；v2） */
+  async onMonitorStopped(cb: () => void): Promise<UnlistenFn> {
+    return listen("gate://monitor-stopped", () => {
+      cb();
+    });
+  },
+
+  /** 订阅关窗拦截事件（后端已 prevent_close，前端弹二次确认；v2） */
+  async onCloseRequested(cb: () => void): Promise<UnlistenFn> {
+    return listen("gate://close-requested", () => {
       cb();
     });
   },

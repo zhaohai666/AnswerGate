@@ -733,6 +733,18 @@ pub fn confirm_exit(app_handle: AppHandle) -> Result<(), AppError> {
     Ok(())
 }
 
+/// 下发当前活动试卷视图（v2：超时答题由后端自动开卷，前端经此取题面）。
+///
+/// 仅 Quiz 态有活动试卷；无试卷（前端刷新保护场景）返回 PaperNotFound。
+#[tauri::command]
+pub fn get_active_paper(state: State<AppState>) -> Result<PaperView, AppError> {
+    let gate = state.gate.lock().unwrap();
+    let paper = gate
+        .active_paper()
+        .ok_or_else(|| AppError::PaperNotFound("无进行中的试卷".to_string()))?;
+    Ok(paper.to_view())
+}
+
 /// 启动恢复：读取持久化门禁状态；冷却中返回剩余秒数（前端直接进冷却页）。
 #[tauri::command]
 pub fn get_gate_state(state: State<AppState>) -> Result<GateStateView, AppError> {

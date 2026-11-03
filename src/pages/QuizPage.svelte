@@ -1,6 +1,7 @@
 <script lang="ts">
-  /** 答题页：单选/判断/填空三种作答区，「上一题」可改答案，整卷一次性提交（PRD 5.3 ②） */
-  import { paper, submit, backToLevel } from "../lib/gateStore";
+  /** 答题页：单选/判断/填空三种作答区，「上一题」可改答案，整卷一次性提交（PRD 5.3 ②）
+   *  v2：超时答题在顶部显示提示条（quizBanner 由 gate://timeout-reached 置位） */
+  import { paper, submit, backToLevel, quizBanner } from "../lib/gateStore";
   import type { Answer, QuizItem } from "../lib/types";
   import ProgressHeader from "../components/ProgressHeader.svelte";
   import BigButton from "../components/BigButton.svelte";
@@ -49,6 +50,9 @@
 
 {#if $paper}
   <main class="container">
+    {#if $quizBanner}
+      <div class="timeup-banner" role="alert">⏰ {$quizBanner}</div>
+    {/if}
     <ProgressHeader current={index + 1} {total} />
 
     {#if current}
@@ -127,6 +131,17 @@
     display: flex;
     flex-direction: column;
     height: 100vh;
+  }
+
+  /* 超时答题提示条（v2） */
+  .timeup-banner {
+    background: var(--ag-warning);
+    color: #fff;
+    font-size: var(--ag-font-body);
+    font-weight: 600;
+    text-align: center;
+    padding: 10px 16px;
+    flex-shrink: 0;
   }
 
   .question {
