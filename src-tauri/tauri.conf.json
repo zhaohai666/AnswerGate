@@ -1,0 +1,48 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "AnswerGate",
+  "version": "0.1.0",
+  "identifier": "com.answergate.app",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:5173",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "AnswerGate 答题门禁",
+        "width": 800,
+        "height": 600,
+        "resizable": false,
+        "center": true,
+        "fullscreen": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "category": "Education",
+    "shortDescription": "答题门禁控制台",
+    "longDescription": "孩子答对题目后才能解锁启动指定软件。题库本地 JSON，离线优先。",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.png",
+      "icons/icon.ico"
+    ],
+    "resources": [
+      "../resources/config.toml",
+      "../resources/question_bank/*.json"
+    ],
+    "macOS": {
+      "entitlements": "./entitlements.plist"
+    }
+  }
+}

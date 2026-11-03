@@ -1,0 +1,131 @@
+classDiagram
+    class Level {
+        <<enumeration>>
+        Kindergarten
+        Primary
+        Junior
+    }
+    class QuestionType {
+        <<enumeration>>
+        SingleChoice
+        TrueFalse
+        FillBlank
+    }
+    class Question {
+        +String id
+        +Level level
+        +Option~String~ grade
+        +String subject
+        +QuestionType qtype
+        +String title
+        +Vec~String~ options
+        +String answer
+        +Option~String~ hint
+        +to_public() QuizItem
+    }
+    class QuizItem {
+        +String id
+        +QuestionType qtype
+        +String title
+        +Vec~String~ options
+    }
+    class Paper {
+        +String paper_id
+        +Level level
+        +Vec~Question~ questions
+        +to_view() PaperView
+    }
+    class PaperView {
+        +String paper_id
+        +Level level
+        +Vec~QuizItem~ items
+    }
+    class Answer {
+        +String question_id
+        +String value
+    }
+    class GradeResult {
+        +String paper_id
+        +u32 total
+        +u32 correct
+        +f32 score
+        +bool passed
+        +u32 remaining_retry
+    }
+    class QuizConfig {
+        +Level default_level
+        +u32 question_count
+        +f32 pass_score
+        +u32 max_retry
+        +u64 cool_down_sec
+    }
+    class TargetApp {
+        +String id
+        +String name
+        +PlatformLaunchSpec spec
+    }
+    class AppConfig {
+        +QuizConfig quiz
+        +Vec~TargetApp~ targets
+        +LogConfig log
+        +Option~String~ parent_password_hash
+    }
+    class GatePhase {
+        <<enumeration>>
+        Idle
+        Quiz
+        Grading
+        Passed
+        Failed
+        Cooldown
+    }
+    class GateState {
+        +GatePhase phase
+        +u32 remaining_retry
+        +Option~i64~ cooldown_until_epoch
+        +Option~Paper~ active_paper
+        +Option~String~ selected_target_id
+        +Option~String~ current_level
+        +persist(path) Result
+        +restore(path) Result
+    }
+    class GateStateView {
+        +GatePhase phase
+        +u32 remaining_retry
+        +u64 cooldown_remaining_sec
+        +Option~String~ selected_target_name
+    }
+    class AppState {
+        +AppConfig config
+        +RwLock~GateState~ gate
+        +Vec~Question~ bank
+        +PathPair paths
+        +new(paths) Result
+    }
+    class AppError {
+        <<enumeration>>
+        ConfigInvalid~String~
+        BankInvalid~String~
+        BankEmpty
+        NotEnoughQuestions
+        CooldownActive~u64~
+        NoRetryLeft
+        PaperNotFound
+        TargetNotFound
+        LaunchFailed~String~
+        ParentPasswordError
+        Io~String~
+    }
+    Paper "1" *-- "1..N" Question : contains
+    Question ..> QuizItem : to_public() 剥离答案
+    Paper ..> PaperView : to_view() 下发
+    Paper ..> Answer : 由 submit 携带
+    AppState o-- AppConfig : 持有
+    AppState o-- GateState : 管理状态机
+    AppState ..> GateStateView : 导出视图
+    AppState ..> AppError : 统一错误
+    GateState ..> GatePhase
+    AppConfig *-- QuizConfig
+    AppConfig *-- "0..N" TargetApp
+    Question ..> Level
+    Question ..> QuestionType

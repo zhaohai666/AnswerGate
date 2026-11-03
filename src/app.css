@@ -1,0 +1,51 @@
+/* AnswerGate 全局主题：CSS 变量、儿童友好大字体大按钮基线、竖屏适配 */
+
+:root {
+  /* 主题色（儿童友好高对比配色） */
+  --ag-bg: #f5f7fb;
+  --ag-surface: #ffffff;
+  --ag-primary: #2f6fed;
+  --ag-primary-dark: #1e4fc0;
+  --ag-success: #22a06b;
+  --ag-danger: #e5484d;
+  --ag-warning: #f5a524;
+  --ag-text: #1f2430;
+  --ag-text-secondary: #5a6472;
+
+  /* 尺寸基线（UI 规范：按钮 ≥64px，正文 ≥20px，点击区 ≥48px） */
+  --ag-btn-height: 64px;
+  --ag-font-body: 20px;
+  --ag-font-title: 28px;
+  --ag-radius: 16px;
+
+  font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", system-ui,
+    sans-serif;
+  font-size: var(--ag-font-body);
+  color: var(--ag-text);
+  background-color: var(--ag-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  overflow: hidden;
+  user-select: none;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* Android 竖屏适配：纵向排列占满屏宽 */
+@media (orientation: portrait) {
+  .container,
+  main {
+    padding: 12px;
+  }
+}

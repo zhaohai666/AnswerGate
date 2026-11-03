@@ -1,0 +1,30 @@
+# AnswerGate 默认配置模板（首启复制到 app_data_dir/config.toml，家长可编辑）
+# 说明：门禁状态（重试/冷却）独立存储在 gate_state.json，删除本文件不会重置冷却。
+
+[quiz]
+# 默认学段：kindergarten / primary / junior
+default_level = "primary"
+# 每次抽题数量
+question_count = 5
+# 及格线：正确率 ≥ 0.8 解锁
+pass_score = 0.8
+# 答错整套后最多重试次数
+max_retry = 2
+# 重试耗尽后的冷却秒数
+cool_down_sec = 120
+
+# 目标软件白名单（多平台字段可选填写，按当前平台取值）
+[[target_apps]]
+id = "demo-notes"
+name = "备忘录演示"
+mac = "/Applications/TextEdit.app"
+win = "C:\\Windows\\System32\\notepad.exe"
+# android = "com.example.notes"
+
+# [log]
+# enable = true
+# path = "logs/answer_gate.log"
+
+# [parent]
+# 家长密码应急解锁（默认关闭；填写 SHA-256 hex 后启用）
+# password_hash = ""

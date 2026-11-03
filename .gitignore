@@ -1,0 +1,20 @@
+# 前端
+node_modules/
+dist/
+
+# Rust / Tauri
+src-tauri/target/
+src-tauri/gen/schemas/
+
+# 环境与系统文件
+.DS_Store
+*.local
+.env
+.env.*
+
+# 日志
+*.log
+
+# IDE
+.idea/
+.vscode/

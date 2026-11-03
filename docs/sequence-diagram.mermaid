@@ -1,0 +1,67 @@
+sequenceDiagram
+    participant FE as 前端(Svelte)
+    participant CMD as commands.rs
+    participant G as gate.rs 状态机
+    participant Q as quiz.rs
+    participant U as unlock.rs
+    participant FS as gate_state.json/日志
+
+    Note over FE,FS: ① 启动恢复（防重启绕过）
+    FE->>CMD: get_gate_state()
+    CMD->>G: restore(gate_state.json)
+    G->>FS: 读取持久化状态
+    alt 冷却未结束
+        G-->>CMD: GateStateView{Cooldown, remaining}
+        CMD-->>FE: CooldownPage + 订阅 gate://cooldown-tick
+    else 正常
+        G-->>CMD: GateStateView{Idle}
+        CMD-->>FE: LevelSelectPage
+    end
+
+    Note over FE,FS: ② 开始答题（PASS 主路径前半）
+    FE->>CMD: start_quiz(level, target_id)
+    CMD->>G: 校验冷却/进入 QUIZ + persist
+    CMD->>Q: 抽题(题量N, 过滤填空@Android)
+    Q-->>CMD: Paper(含答案, 存内存)
+    CMD-->>FE: PaperView(无答案)
+    loop 每题作答
+        FE->>FE: 渲染选项/判断/填空
+    end
+    FE->>CMD: submit_answers(paper_id, answers)
+    CMD->>Q: 判分(正确率 vs pass_score)
+    Q-->>CMD: GradeResult
+
+    Note over FE,FS: ③ PASS 路径
+    CMD->>G: QUIZ→PASSED + persist
+    CMD->>FS: 日志(时间/学段/得分/通过)
+    CMD-->>FE: GradeResult{passed=true}
+    FE->>CMD: launch_target()
+    CMD->>U: launch(selected_target)
+    alt Windows
+        U->>U: Command::new(exe).spawn()
+    else macOS
+        U->>U: Command::new("open").arg("-a").arg(app_path)
+    else Android
+        U->>U: 插件 LaunchPlugin.kt → Intent(setPackage).launch
+    end
+    U-->>CMD: Ok / LaunchFailed
+    CMD-->>FE: Ok
+    FE->>FE: "已启动，即将关闭"
+    CMD->>CMD: app_handle.exit(0)
+
+    Note over FE,FS: ④ FAIL→RETRY 路径
+    CMD->>G: QUIZ→FAILED(retry-1) + persist
+    CMD-->>FE: GradeResult{passed=false, remaining_retry>0}
+    FE->>CMD: retry_quiz()
+    CMD->>Q: 重新抽题
+    CMD-->>FE: 新 PaperView
+
+    Note over FE,FS: ⑤ FAIL→COOLDOWN 路径
+    CMD->>G: FAILED(retry=0)→COOLDOWN + persist(cooldown_until)
+    CMD-->>FE: GradeResult{remaining_retry=0}
+    FE->>FE: CooldownPage
+    loop 每 1 秒（Rust 计时）
+        CMD-->>FE: gate://cooldown-tick {remaining}
+    end
+    CMD-->>FE: gate://cooldown-finished
+    FE->>CMD: retry_quiz() → 回到答题页
