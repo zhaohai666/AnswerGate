@@ -14,9 +14,9 @@ for arg in "$@"; do [[ "$arg" == "--dmg" ]] && MAKE_DMG=1; done
 
 rustup target add "$TARGET_A" "$TARGET_B"
 
-echo "==> 打包 $TARGET_A（仅 .app，dmg 由 hdiutil 单独制作）"
+echo "==> 打包 ${TARGET_A}（仅 .app，dmg 由 hdiutil 单独制作）"
 npm run tauri build -- --target "$TARGET_A" --bundles app
-echo "==> 打包 $TARGET_B"
+echo "==> 打包 ${TARGET_B}"
 npm run tauri build -- --target "$TARGET_B" --bundles app
 
 APP_A="src-tauri/target/$TARGET_A/release/bundle/macos/AnswerGate.app"
