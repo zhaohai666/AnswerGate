@@ -217,6 +217,16 @@ pub struct TargetApp {
     /// Android 包名。
     #[serde(default)]
     pub android: Option<String>,
+    /// 单轮使用时长（分钟，v2；支持小数，最小 0.1 由 sanitize 兜底）。
+    #[serde(default = "default_use_minutes")]
+    pub use_minutes: f64,
+    /// 每日累计上限（分钟，v2 P1 留位不启用，Q2）。
+    #[serde(default)]
+    pub daily_limit_minutes: Option<f64>,
+}
+
+fn default_use_minutes() -> f64 {
+    10.0
 }
 
 impl TargetApp {
@@ -268,12 +278,32 @@ pub struct ParentConfig {
     pub password_hash: Option<String>,
 }
 
-/// [monitor] 段配置（v2 T01 预留 fast_test；完整字段 min_use_minutes 等在 T02 扩展）。
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+/// [monitor] 段配置（v2：使用时长管控全局参数）。
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct MonitorConfig {
-    /// true 时轮次固定 10 秒并忽略 use_minutes（U10 加速档，QA 用；前端显示"测试模式"水印）。
+    /// true 时单轮固定 10 秒并忽略 use_minutes（U10 加速档，QA 用；前端显示"测试模式"水印）。
     #[serde(default)]
     pub fast_test: bool,
+    /// use_minutes 下限（分钟），低于回退并告警；家长无需感知。
+    #[serde(default = "default_min_use_minutes")]
+    pub min_use_minutes: f64,
+    /// 每次解锁允许的最多轮次（含续期）；0 = 不限。
+    #[serde(default)]
+    pub max_rounds: u32,
+}
+
+fn default_min_use_minutes() -> f64 {
+    0.1
+}
+
+impl Default for MonitorConfig {
+    fn default() -> Self {
+        MonitorConfig {
+            fast_test: false,
+            min_use_minutes: default_min_use_minutes(),
+            max_rounds: 0,
+        }
+    }
 }
 
 /// 应用配置总入口。

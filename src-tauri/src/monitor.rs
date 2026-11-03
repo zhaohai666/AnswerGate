@@ -161,6 +161,19 @@ pub fn remaining_sec(now: u64, round_started_epoch: u64, use_minutes: f64) -> i6
     round_started_epoch as i64 + total_sec.max(0) - now as i64
 }
 
+/// 计算单轮时长（秒）：`fast_test=true` 固定 10 秒并忽略 use_minutes（U10 双轨）；
+/// 否则 `use_minutes*60` 四舍五入；非法值按 0（sanitize 的下限兜底在 config 层）。
+pub fn round_duration_sec(use_minutes: f64, fast_test: bool) -> i64 {
+    if fast_test {
+        return 10;
+    }
+    if use_minutes.is_finite() {
+        (use_minutes * 60.0).round() as i64
+    } else {
+        0
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

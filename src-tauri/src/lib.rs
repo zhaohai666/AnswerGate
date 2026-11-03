@@ -1,7 +1,8 @@
 //! AnswerGate 应用装配层（lib 入口，桌面与移动共用）。
 //!
 //! 装配内容：日志初始化 → 题库/配置加载 → 门禁状态恢复 → AppState manage
-//! → 全部 command 注册 → Android 启动插件注册 → 冷却计时器（按需）。
+//! → 全部 command 注册 → Android 启动插件注册 → 冷却/使用中计时器（按需）
+//! → 单实例锁 + 关窗拦截（v2 常驻化，仅桌面）。
 
 pub mod clock;
 pub mod commands;
@@ -14,7 +15,7 @@ pub mod monitor;
 pub mod quiz;
 pub mod unlock;
 
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 
 /// 解析题库目录：打包后位于 resource_dir（tauri bundler 会把 "../x" 声明映射为
 /// bundle 内 "_up_/x"，故须探测 _up_ 前缀布局）；开发/测试回退到仓库相对路径。
@@ -48,7 +49,7 @@ fn resolve_bank_dir(handle: &tauri::AppHandle) -> std::path::PathBuf {
 /// 应用统一入口。
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let builder = tauri::Builder::default()
         .plugin(answergate_launch::init())
         .invoke_handler(tauri::generate_handler![
             commands::get_app_config,
@@ -57,9 +58,23 @@ pub fn run() {
             commands::retry_quiz,
             commands::submit_answers,
             commands::launch_target,
+            commands::extend_and_relaunch,
+            commands::get_monitor_state,
+            commands::stop_monitor,
+            commands::confirm_exit,
             commands::get_gate_state,
             commands::parent_unlock,
-        ])
+        ]);
+
+    // 桌面端：单实例锁（C12，二次启动聚焦已有窗口）
+    #[cfg(desktop)]
+    let builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+        if let Some(window) = app.get_webview_window("main") {
+            let _ = window.set_focus();
+        }
+    }));
+
+    builder
         .setup(|app| {
             let handle = app.handle().clone();
             // 1) 日志（guard 需活到进程结束：进程生命周期对象，forget 安全）
@@ -76,10 +91,28 @@ pub fn run() {
             let state = commands::AppState::new(app_data, &bank_dir)?;
             // 3) 重启恢复：冷却中则立即启动倒计时推送（防重启绕过，PRD P0-06）
             if state.gate.lock().unwrap().phase == gate::GatePhase::Cooldown {
-                commands::spawn_cooldown_ticker(handle);
+                commands::spawn_cooldown_ticker(handle.clone());
+            }
+            // 4) v2 重启恢复：使用中则重验句柄/剩余时长，成功则恢复监控（C10）
+            if commands::revalidate_using_on_startup(&state, commands::now()) {
+                let target_id = state
+                    .gate
+                    .lock()
+                    .unwrap()
+                    .managed_target_id
+                    .clone();
+                let round_sec = commands::round_sec_for(&state, target_id.as_deref());
+                commands::spawn_using_monitor(handle, round_sec);
             }
             app.manage(state);
             Ok(())
+        })
+        .on_window_event(|window, event| {
+            // v2 常驻化：拦截关窗 → 前端二次确认弹窗（确认后调 confirm_exit）
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                api.prevent_close();
+                let _ = window.emit("gate://close-requested", serde_json::json!({}));
+            }
         })
         .run(tauri::generate_context!())
         .expect("AnswerGate 启动失败：无法初始化 Tauri 运行时");

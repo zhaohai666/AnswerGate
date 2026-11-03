@@ -31,6 +31,24 @@ fn sanitize(cfg: &mut AppConfig) {
         tracing::warn!("config.quiz.cool_down_sec 为 0，回退默认值 120");
         cfg.quiz.cool_down_sec = 120;
     }
+    // [monitor]：min_use_minutes 非法（≤0/非数值）回退 0.1
+    if !(cfg.monitor.min_use_minutes.is_finite() && cfg.monitor.min_use_minutes > 0.0) {
+        tracing::warn!("config.monitor.min_use_minutes 非法，回退默认值 0.1");
+        cfg.monitor.min_use_minutes = 0.1;
+    }
+    // [[target_apps]]：use_minutes 低于下限/非法 → 回退下限并告警（架构 #4：最小 0.1）
+    let min = cfg.monitor.min_use_minutes;
+    for t in &mut cfg.target_apps {
+        if !(t.use_minutes.is_finite() && t.use_minutes >= min) {
+            tracing::warn!(
+                target = %t.id,
+                use_minutes = t.use_minutes,
+                min = min,
+                "target_apps.use_minutes 低于下限或非法，回退下限值"
+            );
+            t.use_minutes = min;
+        }
+    }
     // 白名单 id 去重（重复条目只保留首个）
     let mut seen = std::collections::HashSet::new();
     cfg.target_apps.retain(|t| seen.insert(t.id.clone()));

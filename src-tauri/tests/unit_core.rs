@@ -9,7 +9,7 @@
 
 use answergate_lib::config;
 use answergate_lib::error::AppError;
-use answergate_lib::gate::{GatePhase, GateState};
+use answergate_lib::gate::{GatePhase, GateState, QuizReason};
 use answergate_lib::model::{Answer, Level, Paper, Question, QuestionType};
 use answergate_lib::quiz;
 
@@ -338,7 +338,7 @@ fn state_machine_pass_path() {
     let mut st = GateState::new(2);
     st.begin_quiz(Level::Primary, None, NOW).unwrap();
     assert_eq!(st.phase, GatePhase::Quiz);
-    assert_eq!(st.record_result(true, COOLDOWN, NOW), GatePhase::Passed);
+    assert_eq!(st.record_result(true, QuizReason::Initial, COOLDOWN, NOW), GatePhase::Passed);
     assert_eq!(st.remaining_retry, 2, "通过不扣减重试次数");
 }
 
@@ -348,16 +348,16 @@ fn state_machine_fail_retry_then_cooldown() {
     let mut st = GateState::new(2);
     // 第 1 次失败：FAIL，剩余重试仍显示满额 2
     st.begin_quiz(Level::Primary, None, NOW).unwrap();
-    assert_eq!(st.record_result(false, COOLDOWN, NOW), GatePhase::Failed);
+    assert_eq!(st.record_result(false, QuizReason::Initial, COOLDOWN, NOW), GatePhase::Failed);
     assert_eq!(st.remaining_retry, 2);
     // 第 1 次重试（余额 2→1）→ QUIZ → 第 2 次失败：FAIL
     st.begin_retry(NOW).unwrap();
     assert_eq!(st.phase, GatePhase::Quiz);
-    assert_eq!(st.record_result(false, COOLDOWN, NOW), GatePhase::Failed);
+    assert_eq!(st.record_result(false, QuizReason::Initial, COOLDOWN, NOW), GatePhase::Failed);
     assert_eq!(st.remaining_retry, 1);
     // 第 2 次重试（余额 1→0）→ QUIZ → 第 3 次失败：余额为 0 → COOLDOWN
     st.begin_retry(NOW).unwrap();
-    assert_eq!(st.record_result(false, COOLDOWN, NOW), GatePhase::Cooldown);
+    assert_eq!(st.record_result(false, QuizReason::Initial, COOLDOWN, NOW), GatePhase::Cooldown);
     assert_eq!(st.remaining_retry, 0);
     assert_eq!(st.cooldown_until_epoch, Some(NOW + COOLDOWN as i64));
     // 冷却期间再试 → 优先命中 CooldownActive（冷却校验在前）
@@ -372,11 +372,11 @@ fn cooldown_blocks_start_quiz_with_remaining_seconds() {
     let mut st = GateState::new(2);
     // 三次机会全部用完 → COOLDOWN
     st.begin_quiz(Level::Primary, None, NOW).unwrap();
-    st.record_result(false, COOLDOWN, NOW);
+    st.record_result(false, QuizReason::Initial, COOLDOWN, NOW);
     st.begin_retry(NOW).unwrap();
-    st.record_result(false, COOLDOWN, NOW);
+    st.record_result(false, QuizReason::Initial, COOLDOWN, NOW);
     st.begin_retry(NOW).unwrap();
-    st.record_result(false, COOLDOWN, NOW); // rem=0 → 冷却
+    st.record_result(false, QuizReason::Initial, COOLDOWN, NOW); // rem=0 → 冷却
     assert_eq!(st.phase, GatePhase::Cooldown);
     // 冷却未到，start_quiz 被拒绝并携带剩余秒数
     let err = st.begin_quiz(Level::Primary, None, NOW + 10).unwrap_err();
@@ -401,7 +401,7 @@ fn gate_state_persist_roundtrip() {
     let path = dir.path().join(".answergate_gate_state.json");
     let mut st = GateState::new(2);
     st.begin_quiz(Level::Junior, Some("target-1".into()), NOW).unwrap();
-    st.record_result(false, COOLDOWN, NOW); // Failed, 显示余额 2
+    st.record_result(false, QuizReason::Initial, COOLDOWN, NOW); // Failed, 显示余额 2
     st.begin_retry(NOW).unwrap(); // 余额 2→1，回 QUIZ
     st.save(&path).unwrap();
     let loaded = GateState::load(&path).unwrap().unwrap();
@@ -418,7 +418,7 @@ fn recover_preserves_cooldown_across_restart() {
     // 冷却中保存（直接构造 rem=0 的失败态再判分，即冷却触发条件）
     let mut st = GateState::new(2);
     st.remaining_retry = 0;
-    st.record_result(false, COOLDOWN, NOW);
+    st.record_result(false, QuizReason::Initial, COOLDOWN, NOW);
     assert_eq!(st.phase, GatePhase::Cooldown);
     st.save(&path).unwrap();
     // 重启：剩余时间未到 → 仍处冷却
@@ -439,7 +439,7 @@ fn gate_state_independent_of_config_file() {
     // 持久化一个冷却中状态（重试余额为 0 时失败 → 触发冷却）
     let mut st = GateState::new(2);
     st.remaining_retry = 0;
-    st.record_result(false, COOLDOWN, NOW);
+    st.record_result(false, QuizReason::Initial, COOLDOWN, NOW);
     st.save(&state_path).unwrap();
     // 删除 config.toml
     std::fs::write(&config_path, "[quiz]\nquestion_count = 9\n").unwrap();

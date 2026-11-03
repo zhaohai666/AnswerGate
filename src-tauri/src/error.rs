@@ -41,6 +41,18 @@ pub enum AppError {
 
     #[error("家长密码错误")]
     ParentPasswordError,
+
+    #[error("监控失败：{0}")]
+    MonitorFailed(String),
+
+    #[error("当前未处于使用中状态")]
+    NotUsing,
+
+    #[error("目标软件已在使用中纳管")]
+    AlreadyManaged,
+
+    #[error("已达本轮次上限（{max_rounds} 轮），请休息一下")]
+    RoundLimitReached { max_rounds: u32 },
 }
 
 impl AppError {
@@ -58,6 +70,10 @@ impl AppError {
             AppError::TargetNotFound(_) => "TargetNotFound",
             AppError::NoRetryLeft => "NoRetryLeft",
             AppError::ParentPasswordError => "ParentPasswordError",
+            AppError::MonitorFailed(_) => "MonitorFailed",
+            AppError::NotUsing => "NotUsing",
+            AppError::AlreadyManaged => "AlreadyManaged",
+            AppError::RoundLimitReached { .. } => "RoundLimitReached",
         }
     }
 
@@ -66,6 +82,9 @@ impl AppError {
         match self {
             AppError::CooldownActive { remaining_sec } => {
                 Some(serde_json::json!({ "remaining_sec": remaining_sec }))
+            }
+            AppError::RoundLimitReached { max_rounds } => {
+                Some(serde_json::json!({ "max_rounds": max_rounds }))
             }
             AppError::NotEnoughQuestions {
                 requested,
