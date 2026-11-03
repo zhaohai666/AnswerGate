@@ -3,12 +3,14 @@
 //! 装配内容：日志初始化 → 题库/配置加载 → 门禁状态恢复 → AppState manage
 //! → 全部 command 注册 → Android 启动插件注册 → 冷却计时器（按需）。
 
+pub mod clock;
 pub mod commands;
 pub mod config;
 pub mod error;
 pub mod gate;
 pub mod log;
 pub mod model;
+pub mod monitor;
 pub mod quiz;
 pub mod unlock;
 

@@ -268,6 +268,14 @@ pub struct ParentConfig {
     pub password_hash: Option<String>,
 }
 
+/// [monitor] 段配置（v2 T01 预留 fast_test；完整字段 min_use_minutes 等在 T02 扩展）。
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub struct MonitorConfig {
+    /// true 时轮次固定 10 秒并忽略 use_minutes（U10 加速档，QA 用；前端显示"测试模式"水印）。
+    #[serde(default)]
+    pub fast_test: bool,
+}
+
 /// 应用配置总入口。
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct AppConfig {
@@ -280,4 +288,7 @@ pub struct AppConfig {
     pub log: LogConfig,
     #[serde(default)]
     pub parent: ParentConfig,
+    /// config.toml 中为 [monitor] 段。
+    #[serde(default)]
+    pub monitor: MonitorConfig,
 }
