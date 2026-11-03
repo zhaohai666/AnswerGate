@@ -246,6 +246,21 @@ pub fn do_submit_answers(
     let cool_down_sec = state.config.quiz.cool_down_sec;
     let phase = gate.record_result(result.passed, reason, cool_down_sec, now_ts);
     result.remaining_retry = gate.remaining_retry;
+    // v2.1 防跳过：答错耗尽重试进入冷却时，pause 模式下目标进程仍存活（仅被暂停）——
+    // 答题失败即本轮结束，必须关闭目标软件，否则孩子可切回去手动恢复播放绕过冷却。
+    // kill 模式此处 managed_pid 已清空，天然无操作。
+    if phase == GatePhase::Cooldown {
+        if let Some(pid) = gate.managed_pid {
+            if monitor::alive(pid) {
+                let killed = monitor::terminate(pid);
+                tracing::info!(
+                    pid, killed,
+                    event = "cooldown_kill_target",
+                    "答题失败进入冷却，关闭暂停中的目标软件（防绕过冷却）"
+                );
+            }
+        }
+    }
     gate.save(&state.state_file())?;
     tracing::info!(
         event = "grade",
@@ -697,6 +712,14 @@ fn handle_timeout(app: &AppHandle, state: &AppState, round_sec: i64, now_ts: i64
                 "gate://timeout-reached",
                 serde_json::json!({ "target_name": target_name }),
             );
+            // v2.1 防跳过：pause 模式答题期间启动「暂停守卫」——孩子手动切回
+            // 目标软件点播放的，每 5s 重新发送暂停键并把答题窗拉回前台。
+            if pause_still_alive {
+                if let Some(pid) = pid {
+                    let key_code = state.config.monitor.pause_key_code;
+                    spawn_paused_guard(app.clone(), pid, key_code);
+                }
+            }
         }
         Err(e) => {
             // 入题失败兜底（如题库异常）：放弃本轮回 Idle，不放任目标继续使用
@@ -714,8 +737,51 @@ fn handle_timeout(app: &AppHandle, state: &AppState, round_sec: i64, now_ts: i64
     }
 }
 
-// ---------- Tauri command 薄封装 ----------
+// ---------- v2.1 暂停守卫（pause 模式防跳过） ----------
 
+/// 暂停守卫单步判定（纯逻辑，供守卫线程与测试复用）。
+/// 仅当「仍在暂停答题（Quiz{Timeup} 且 paused）且纳管字段还在」时需要重新暂停。
+pub fn paused_guard_step(gate: &GateState, pid: i32) -> bool {
+    gate.phase == GatePhase::Quiz && gate.paused && gate.managed_pid == Some(pid)
+}
+
+/// 暂停守卫线程：答题未完成期间每 [`PAUSE_GUARD_INTERVAL_SEC`] 秒对目标进程
+/// 重新发送暂停键，并把 AnswerGate 窗口拉回前台——堵住「切回去手动点播放」的绕过路径。
+///
+/// 退出条件（任一）：相位离开 Quiz{Timeup} 暂停态（答对续期/失败进冷却/提前结束）、
+/// 目标进程已死、monitor_stop 置位、应用退出。
+pub fn spawn_paused_guard(app: AppHandle, pid: i32, key_code: u16) {
+    let stop_flag = app.state::<AppState>().monitor_stop.clone();
+    std::thread::spawn(move || loop {
+        std::thread::sleep(Duration::from_secs(PAUSE_GUARD_INTERVAL_SEC));
+        if stop_flag.load(Ordering::SeqCst) {
+            break;
+        }
+        let state = app.state::<AppState>();
+        let should_repause = {
+            let gate = state.gate.lock().unwrap();
+            paused_guard_step(&gate, pid)
+        };
+        if !should_repause {
+            tracing::info!(pid, event = "pause_guard_stopped", "暂停守卫退出（答题流程已推进）");
+            break;
+        }
+        if !monitor::alive(pid) {
+            tracing::warn!(pid, event = "pause_guard_stopped", "目标进程已死，守卫退出");
+            break;
+        }
+        let repaused = monitor::pause_target(pid, key_code);
+        if let Some(window) = app.get_webview_window("main") {
+            let _ = window.set_focus();
+        }
+        tracing::info!(pid, repaused, event = "pause_guard_tick", "守卫重新暂停目标软件");
+    });
+}
+
+/// 暂停守卫重发间隔（秒）。
+const PAUSE_GUARD_INTERVAL_SEC: u64 = 5;
+
+// ---------- Tauri command 薄封装 ----------
 /// 获取规则摘要（题量/及格线/重试/冷却 + 学段列表）。
 #[tauri::command]
 pub fn get_app_config(state: State<AppState>) -> Result<RulesSummary, AppError> {
@@ -804,10 +870,23 @@ pub fn stop_monitor(state: State<AppState>, app_handle: AppHandle) -> Result<(),
     Ok(())
 }
 
-/// 窗口关闭二次确认后调用：与 v1 exit 等价（关掉 AnswerGate = 放弃续期能力，可接受；
-/// 本轮剩余时长在重启恢复时按 round_started_epoch 续算）。
+/// 窗口关闭二次确认后调用（v2.1 防跳过加固）：
+/// 退出前若纳管目标进程仍存活（Using 计时中，或 pause 模式暂停答题中），
+/// **必须先关闭目标软件再退出**——否则孩子「关掉 AnswerGate + 切回目标软件」即可跳过答题。
+/// 重启后状态机回 Idle，需重新首答解锁（答题步骤无法跳过，只是重开一轮）。
 #[tauri::command]
-pub fn confirm_exit(app_handle: AppHandle) -> Result<(), AppError> {
+pub fn confirm_exit(state: State<AppState>, app_handle: AppHandle) -> Result<(), AppError> {
+    let pid = state.gate.lock().unwrap().managed_pid;
+    if let Some(pid) = pid {
+        if monitor::alive(pid) {
+            let killed = monitor::terminate(pid);
+            tracing::warn!(
+                pid, killed,
+                event = "exit_kill_target",
+                "用户确认退出 AnswerGate，同步关闭纳管中的目标软件（防跳过答题）"
+            );
+        }
+    }
     tracing::warn!(event = "confirm_exit", "用户确认退出 AnswerGate");
     app_handle.exit(0);
     Ok(())

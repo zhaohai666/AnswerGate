@@ -133,3 +133,106 @@ fn resume_key_after_pause_process_stays_alive() {
     assert!(monitor::terminate(pid));
     assert!(!monitor::alive(pid));
 }
+
+// ---------- 防跳过加固（v2.1）：守卫判定 + 冷却杀进程 ----------
+
+use answergate_lib::commands::{self, AppState};
+
+#[test]
+fn paused_guard_step_only_repauses_during_paused_quiz() {
+    let mut gate = GateState::new(2);
+    gate.record_result(true, QuizReason::Initial, 120, 1000);
+    gate.begin_using("bili", 111, 1100, false).unwrap();
+    assert!(!commands::paused_guard_step(&gate, 111), "使用中不应触发守卫");
+
+    gate.begin_timeup_paused(Level::Primary, Some("bili".into()), 1300)
+        .unwrap();
+    assert!(commands::paused_guard_step(&gate, 111), "暂停答题中应重新暂停");
+    assert!(!commands::paused_guard_step(&gate, 222), "pid 不匹配不应触发");
+
+    // 答对续期 → Using → 守卫必须停止
+    gate.record_result(true, QuizReason::Timeup, 120, 1400);
+    gate.extend_round("bili", 111, 1500).unwrap();
+    assert!(!commands::paused_guard_step(&gate, 111), "续期后守卫应退出");
+}
+
+/// pause 模式 + max_retry=0 的 fixture：首答失败直接进冷却。
+fn fixture_pause_state() -> (tempfile::TempDir, AppState) {
+    let dir = tempfile::tempdir().unwrap();
+    let bank_dir = dir.path().join("bank");
+    std::fs::create_dir_all(&bank_dir).unwrap();
+    for (level, prefix) in [("kindergarten", "k"), ("primary", "p"), ("junior", "j")] {
+        let q = serde_json::json!({
+            "id": format!("{}_filler", prefix), "level": level, "grade": null,
+            "subject": "math", "type": "single_choice", "title": "占位",
+            "options": ["A", "B"], "answer": "A", "hint": null
+        });
+        std::fs::write(
+            bank_dir.join(format!("{}.json", level)),
+            serde_json::to_string(&vec![q]).unwrap(),
+        )
+        .unwrap();
+    }
+    std::fs::write(
+        dir.path().join("config.toml"),
+        "[quiz]\nmax_retry = 0\n[monitor]\ntimeout_action = \"pause\"\n\
+         [[target_apps]]\nid = \"bili\"\nname = \"哔哩哔哩\"\nmac = \"/Applications/哔哩哔哩.app\"\n",
+    )
+    .unwrap();
+    let state = AppState::new(dir.path().to_path_buf(), &bank_dir).unwrap();
+    (dir, state)
+}
+
+#[test]
+fn cooldown_entry_kills_paused_target_process() {
+    let (_dir, state) = fixture_pause_state();
+    let pid = spawn_sleep_pid();
+    std::thread::sleep(Duration::from_millis(300));
+    assert!(monitor::alive(pid));
+
+    // 首答通过 → 纳管 → 模拟超时暂停（保留纳管字段）
+    let paper = commands::do_start_quiz(&state, Level::Primary, Some("bili".into()), 1000)
+        .expect("首答开卷");
+    let _ = paper;
+    {
+        let mut gate = state.gate.lock().unwrap();
+        gate.record_result(true, QuizReason::Initial, 120, 1100);
+        gate.begin_using("bili", pid, 1200, false).unwrap();
+        gate.begin_timeup_paused(Level::Primary, Some("bili".into()), 1300)
+            .unwrap();
+        // 重新绑定活动试卷（begin_timeup_paused 清了内存试卷，模拟超时自动开卷）
+        // 直接复用 start_quiz 的开卷路径：手动放一张卷
+        let p = answergate_lib::quiz::make_paper(
+            &state.bank,
+            Level::Primary,
+            state.config.quiz.question_count as usize,
+            false,
+        )
+        .unwrap();
+        gate.set_active_paper(p);
+        gate.save(&state.state_file()).unwrap();
+    }
+    // 全错提交：max_retry=0 → 直接进冷却 → 加固逻辑必须真实杀掉暂停中的进程
+    let wrong: Vec<answergate_lib::model::Answer> = {
+        let gate = state.gate.lock().unwrap();
+        gate.active_paper()
+            .unwrap()
+            .questions
+            .iter()
+            .map(|q| answergate_lib::model::Answer {
+                question_id: q.id.clone(),
+                value: " definitely_wrong ".into(),
+            })
+            .collect()
+    };
+    let paper_id = {
+        let gate = state.gate.lock().unwrap();
+        gate.active_paper().unwrap().paper_id.clone()
+    };
+    let result = commands::do_submit_answers(&state, &paper_id, &wrong, 1400);
+    let result = result.expect("判分应成功");
+    assert!(!result.passed);
+    assert_eq!(state.gate.lock().unwrap().phase, GatePhase::Cooldown);
+    // 关键断言：进入冷却即关闭目标软件（防切回手动恢复播放绕过冷却）
+    assert!(!monitor::alive(pid), "进冷却后目标进程必须被关闭");
+}
