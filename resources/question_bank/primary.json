@@ -1,1 +1,18 @@
-[]
+[
+  { "id": "p_001", "level": "primary", "grade": null, "subject": "math", "type": "single_choice", "title": "3+5等于几？", "options": ["6", "8", "9"], "answer": "8", "hint": "3往后数5个数" },
+  { "id": "p_002", "level": "primary", "grade": null, "subject": "math", "type": "single_choice", "title": "12×3等于几？", "options": ["36", "32", "38"], "answer": "36", "hint": null },
+  { "id": "p_003", "level": "primary", "grade": null, "subject": "math", "type": "single_choice", "title": "100以内最大的偶数是多少？", "options": ["98", "99", "100"], "answer": "98", "hint": null },
+  { "id": "p_004", "level": "primary", "grade": null, "subject": "math", "type": "single_choice", "title": "正方形有几条对称轴？", "options": ["2条", "4条", "8条"], "answer": "4条", "hint": null },
+  { "id": "p_005", "level": "primary", "grade": null, "subject": "chinese", "type": "single_choice", "title": "《静夜思》的作者是谁？", "options": ["李白", "杜甫", "白居易"], "answer": "李白", "hint": null },
+  { "id": "p_006", "level": "primary", "grade": null, "subject": "chinese", "type": "single_choice", "title": "“床前明月光”的下一句是？", "options": ["疑是地上霜", "低头思故乡", "举头望明月"], "answer": "疑是地上霜", "hint": null },
+  { "id": "p_007", "level": "primary", "grade": null, "subject": "english", "type": "single_choice", "title": "apple 的中文意思是？", "options": ["苹果", "香蕉", "橘子"], "answer": "苹果", "hint": null },
+  { "id": "p_008", "level": "primary", "grade": null, "subject": "english", "type": "single_choice", "title": "book 的中文意思是？", "options": ["书", "笔", "包"], "answer": "书", "hint": null },
+  { "id": "p_009", "level": "primary", "grade": null, "subject": "science", "type": "single_choice", "title": "地球围绕着什么转？", "options": ["太阳", "月亮", "火星"], "answer": "太阳", "hint": null },
+  { "id": "p_010", "level": "primary", "grade": null, "subject": "math", "type": "true_false", "title": "0乘任何数都等于0。", "options": [], "answer": "对", "hint": null },
+  { "id": "p_011", "level": "primary", "grade": null, "subject": "chinese", "type": "true_false", "title": "《西游记》的作者是罗贯中。", "options": [], "answer": "错", "hint": "作者是吴承恩" },
+  { "id": "p_012", "level": "primary", "grade": null, "subject": "science", "type": "true_false", "title": "水加热到100摄氏度会沸腾。", "options": [], "answer": "对", "hint": null },
+  { "id": "p_013", "level": "primary", "grade": null, "subject": "math", "type": "fill_blank", "title": "7×8等于几？", "options": [], "answer": "56|五十六", "hint": null },
+  { "id": "p_014", "level": "primary", "grade": null, "subject": "chinese", "type": "fill_blank", "title": "“欲穷千里目”的下一句是什么？", "options": [], "answer": "更上一层楼", "hint": null },
+  { "id": "p_015", "level": "primary", "grade": null, "subject": "english", "type": "fill_blank", "title": "cat 的中文意思是？（写中文）", "options": [], "answer": "猫", "hint": null },
+  { "id": "p_016", "level": "primary", "grade": null, "subject": "math", "type": "fill_blank", "title": "一个星期有几天？（填数字）", "options": [], "answer": "7|七|七天|七日", "hint": null }
+]

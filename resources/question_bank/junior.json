@@ -1,1 +1,18 @@
-[]
+[
+  { "id": "j_001", "level": "junior", "grade": null, "subject": "math", "type": "single_choice", "title": "方程 x²=9 的解是？", "options": ["x=3", "x=±3", "x=9"], "answer": "x=±3", "hint": "注意负数解" },
+  { "id": "j_002", "level": "junior", "grade": null, "subject": "math", "type": "single_choice", "title": "直角三角形两条直角边分别为3和4，斜边长是？", "options": ["5", "6", "7"], "answer": "5", "hint": "勾股定理" },
+  { "id": "j_003", "level": "junior", "grade": null, "subject": "physics", "type": "single_choice", "title": "水的密度是多少？", "options": ["1.0g/cm³", "0.8g/cm³", "13.6g/cm³"], "answer": "1.0g/cm³", "hint": null },
+  { "id": "j_004", "level": "junior", "grade": null, "subject": "physics", "type": "single_choice", "title": "光在真空中的传播速度约为？", "options": ["3×10⁸m/s", "3×10⁶m/s", "3×10¹⁰m/s"], "answer": "3×10⁸m/s", "hint": null },
+  { "id": "j_005", "level": "junior", "grade": null, "subject": "chemistry", "type": "single_choice", "title": "水的化学式是？", "options": ["H₂O", "CO₂", "O₂"], "answer": "H₂O", "hint": null },
+  { "id": "j_006", "level": "junior", "grade": null, "subject": "chemistry", "type": "single_choice", "title": "元素符号 Fe 表示哪种元素？", "options": ["铁", "铜", "锌"], "answer": "铁", "hint": null },
+  { "id": "j_007", "level": "junior", "grade": null, "subject": "biology", "type": "single_choice", "title": "人体进行气体交换（呼吸）的主要器官是？", "options": ["肺", "心脏", "肝脏"], "answer": "肺", "hint": null },
+  { "id": "j_008", "level": "junior", "grade": null, "subject": "biology", "type": "single_choice", "title": "细胞是生物体结构和功能的什么？", "options": ["基本单位", "最大单位", "附属结构"], "answer": "基本单位", "hint": null },
+  { "id": "j_009", "level": "junior", "grade": null, "subject": "history", "type": "single_choice", "title": "中国人民抗日战争胜利是在哪一年？", "options": ["1945年", "1937年", "1949年"], "answer": "1945年", "hint": null },
+  { "id": "j_010", "level": "junior", "grade": null, "subject": "geography", "type": "single_choice", "title": "地球上面积最大的大洋是？", "options": ["太平洋", "大西洋", "印度洋"], "answer": "太平洋", "hint": null },
+  { "id": "j_011", "level": "junior", "grade": null, "subject": "physics", "type": "true_false", "title": "声音可以在真空中传播。", "options": [], "answer": "错", "hint": "声音传播需要介质" },
+  { "id": "j_012", "level": "junior", "grade": null, "subject": "history", "type": "true_false", "title": "秦朝是中国历史上第一个统一的中央集权王朝。", "options": [], "answer": "对", "hint": null },
+  { "id": "j_013", "level": "junior", "grade": null, "subject": "chemistry", "type": "fill_blank", "title": "氧气的化学式是 O₂，其中下标的数字是几？（填数字）", "options": [], "answer": "2|二", "hint": null },
+  { "id": "j_014", "level": "junior", "grade": null, "subject": "math", "type": "fill_blank", "title": "-3的绝对值是多少？", "options": [], "answer": "3", "hint": null },
+  { "id": "j_015", "level": "junior", "grade": null, "subject": "english", "type": "fill_blank", "title": "book 的复数形式是？（写英文）", "options": [], "answer": "books", "hint": null },
+  { "id": "j_016", "level": "junior", "grade": null, "subject": "chinese", "type": "fill_blank", "title": "“会当凌绝顶”的下一句是什么？", "options": [], "answer": "一览众山小", "hint": null }
+]
