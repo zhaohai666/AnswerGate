@@ -65,6 +65,7 @@ fn e2e_full_round_launch_countdown_kill_and_extend() {
     let mut st = passed_state(QuizReason::Initial);
     let pid1 = spawn_target();
     enter_using_with_handle(&mut st, "sleep-demo", Some(pid1), false, 0, now()).unwrap();
+    let round1_start = st.round_started_epoch;
     assert_eq!(st.phase, GatePhase::Using);
     assert!(
         monitor::alive(pid1),
@@ -113,7 +114,10 @@ fn e2e_full_round_launch_countdown_kill_and_extend() {
     assert_ne!(pid1, pid2, "续期应拉起新进程（新 PID ≠ 旧 PID）");
     assert!(monitor::alive(pid2), "新进程应存活（PID {}）", pid2);
     assert_eq!(st.round_count, 2, "首轮 + 续期共 2 轮");
-    assert!(st.round_started_epoch.unwrap() > st.round_started_epoch.unwrap() - 60);
+    assert!(
+        st.round_started_epoch.unwrap() > round1_start.unwrap(),
+        "续期轮次开始时间应晚于首轮（epoch 重置续算）"
+    );
 
     // 清理：结束本轮并杀掉目标
     let _ = monitor::terminate(pid2);

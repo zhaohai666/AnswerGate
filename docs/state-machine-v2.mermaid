@@ -1,0 +1,27 @@
+stateDiagram-v2
+    state "v1 状态（保留）" as v1 {
+        [*] --> Idle_v1: IDLE
+        Idle_v1 --> Quiz_v1: start_quiz
+        Quiz_v1 --> Passed_v1: 判分通过
+        Quiz_v1 --> Cooldown_v1: 重试耗尽
+        Passed_v1 --> [*]: launch_target 后 app.exit(0)<br/>【v2 推翻：不再退出】
+    }
+
+    state "v2 状态" as v2 {
+        [*] --> Idle
+        Idle --> Quiz: start_quiz (reason=Initial)
+        Quiz --> Passed: 判分通过
+        Quiz --> Cooldown: 重试耗尽（目标保持关闭）
+        Passed --> Using: launch_target<br/>拉起+取PID+持久化round_started<br/>【新增】
+        state Using {
+            [*] --> Counting: 每秒 emit using-tick
+        }
+        Using --> Quiz: 超时→kill+置顶→start_quiz (reason=Timeup)<br/>【新增：超时答题】
+        Using --> Idle: 进程意外退出/提前结束<br/>abandon_round，不触发答题【新增】
+        Cooldown --> Idle: 冷却到点（沿用）
+    }
+    note right of Using
+        重启恢复：若 round_started_epoch
+        + 轮次秒数 > now → 恢复 Using
+        继续计时（防杀 AnswerGate 绕过）
+    end note

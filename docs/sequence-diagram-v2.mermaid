@@ -1,0 +1,55 @@
+sequenceDiagram
+    participant FE as 前端(Svelte)
+    participant CMD as commands.rs
+    participant G as gate.rs
+    participant M as monitor.rs
+    participant U as unlock.rs
+    participant FS as 状态文件/日志
+
+    Note over FE,FS: ① 正常轮次：PASS → 拉起 → 计时 → 超时 kill → 超时答题 → 续期
+    FE->>CMD: submit_answers → 判分 PASS(reason=Initial)
+    FE->>CMD: launch_target()
+    CMD->>G: begin_using(now) 持久化 round_started_epoch
+    CMD->>U: launch + 取 ProcessHandle
+    alt Windows
+        U->>U: spawn exe → Child.id()
+    else macOS
+        U->>U: open -a → osascript unix id / pgrep 兜底(5s窗口)
+    end
+    U-->>CMD: ProcessHandle{pid}
+    CMD->>M: tokio::spawn monitor.run(use_minutes, clock, stop信号)
+    CMD-->>FE: MonitorStateView → MonitoringPage
+    loop 每 1 秒（Rust 计时权威）
+        M-->>FE: gate://using-tick {remaining, warning}
+        M->>U: kill -0 pid / try_wait() 存活检查
+    end
+    Note over M,U: 倒计时归零
+    M->>U: kill_tree()（SIGTERM→2s→SIGKILL / taskkill /T /F）
+    M->>M: AnswerGate 窗口置顶带回前台
+    M-->>FE: gate://timeout-reached
+    M->>FS: 日志 event=timeout_kill
+    FE->>CMD: start_quiz(reason=Timeup) → 超时答题
+    FE->>CMD: submit_answers → PASS
+    FE->>CMD: launch_target()（reason=Timeup）
+    CMD->>G: extend_round(now) round_count+1
+    CMD->>U: 重新拉起 + 取新句柄
+    CMD->>M: spawn 新 monitor → gate://using-tick 重新开始
+    CMD-->>FE: MonitorStateView → 回 MonitoringPage（"答对啦！再给你 10 分钟…"）
+
+    Note over FE,FS: ② 逃避分支
+    alt 不答题放置
+        FE->>FE: 停在 QUIZ 不提交 → 目标保持关闭（进程已 kill，无套利空间）
+        CMD->>G: 重试耗尽 → Cooldown（沿用 v1）→ 冷却结束回 Idle
+    else 使用中手动 Cmd+Q 目标
+        M->>U: kill -0 pid 失败（进程消失）
+        M-->>FE: gate://process-exited
+        CMD->>G: abandon_round() → Idle（不误触发答题）
+        M->>FS: 日志 event=round_abandoned reason=process_exit
+    else 杀掉 AnswerGate 再重启
+        CMD->>G: recover() → resume_round_remaining()
+        alt 剩余 > 0
+            CMD->>M: 恢复 monitor（句柄需重新探测，失败则 abandon_round）
+        else 已超时
+            CMD->>G: abandon_round → Idle（本轮作废）
+        end
+    end

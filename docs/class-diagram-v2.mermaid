@@ -1,0 +1,74 @@
+classDiagram
+    class GatePhase {
+        <<enumeration 增量>>
+        Idle
+        Quiz
+        Grading
+        Passed
+        Failed
+        Cooldown
+        Using
+    }
+    class QuizReason {
+        <<enumeration 新增>>
+        Initial
+        Timeup
+    }
+    class GateState {
+        +GatePhase phase
+        +QuizReason quiz_reason
+        +u32 round_count
+        +Option~i64~ round_started_epoch
+        +begin_using(now, round) void
+        +extend_round(now) void
+        +abandon_round() void
+        +resume_round_remaining(now) Option~f64~
+    }
+    class Clock {
+        <<trait>>
+        +now_millis() u64
+        +sleep(dur) Future
+    }
+    class SystemClock {
+        +now_millis() u64
+    }
+    class MockClock {
+        +advance(dur) void
+    }
+    class ProcessHandle {
+        +i32 pid
+        +Option~Child~ child
+        +is_alive() bool
+        +kill_tree() Result
+    }
+    class MonitorTask {
+        +Clock clock
+        +ProcessHandle handle
+        +f64 use_minutes
+        +bool fast_test
+        +Notify stop_signal
+        +run(app_handle) void
+        +remaining_sec() u64
+    }
+    class MonitorStateView {
+        +String target_name
+        +u64 remaining_sec
+        +u32 round_count
+        +bool warning
+    }
+    class TargetApp {
+        +f64 use_minutes
+        +Option~f64~ daily_limit_minutes
+    }
+    class MonitorConfig {
+        +bool fast_test
+        +f64 min_use_minutes
+    }
+    Clock <|.. SystemClock : 实现
+    Clock <|.. MockClock : 测试注入
+    MonitorTask o-- Clock : 持有
+    MonitorTask o-- ProcessHandle : 纳管句柄
+    GateState ..> GatePhase
+    GateState ..> QuizReason
+    MonitorTask ..> MonitorStateView : 导出视图
+    TargetApp ..> MonitorConfig : use_minutes 经 sanitize 校验
