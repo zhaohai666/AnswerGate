@@ -1,6 +1,7 @@
 # 前端
 node_modules/
 dist/
+*.tsbuildinfo
 
 # Rust / Tauri
 src-tauri/target/
