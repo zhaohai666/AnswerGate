@@ -1,0 +1,3 @@
+identifier = "default"
+description = "默认权限：允许调用 launch 启动目标 App"
+permissions = ["allow-launch"]

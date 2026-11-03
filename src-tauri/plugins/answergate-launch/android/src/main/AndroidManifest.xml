@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 库模块清单：queries 白名单由 scripts/sync_android_queries.py 写入主应用 manifest -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" />

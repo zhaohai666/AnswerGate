@@ -9,11 +9,13 @@ pub mod gate;
 pub mod log;
 pub mod model;
 pub mod quiz;
+pub mod unlock;
 
 /// 应用统一入口。
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(answergate_launch::init())
         .setup(|_app| {
             // T04：初始化日志（log.rs）、加载配置与题库（config.rs / quiz.rs）、
             // 恢复门禁状态（gate.rs）、管理 AppState、注册 commands。

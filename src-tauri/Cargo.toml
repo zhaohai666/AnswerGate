@@ -35,6 +35,9 @@ thiserror = "1"
 # 家长密码 hash（P1-01，默认关闭）
 sha2 = "0.10"
 
+# 自研 Android 启动插件（T03，Intent+setPackage）
+answergate-launch = { path = "plugins/answergate-launch" }
+
 [dev-dependencies]
 tempfile = "3"
 

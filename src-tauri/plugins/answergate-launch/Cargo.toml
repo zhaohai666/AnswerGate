@@ -1,0 +1,18 @@
+[package]
+name = "answergate-launch"
+version = "0.1.0"
+description = "AnswerGate Android 启动插件：Intent+setPackage 跳转白名单包名 App"
+authors = ["AnswerGate Team"]
+edition = "2021"
+rust-version = "1.77"
+license = "MIT"
+links = "answergate-launch"
+
+[build-dependencies]
+tauri-plugin = { version = "2", features = ["build"] }
+
+[dependencies]
+tauri = { version = "2" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "1"
