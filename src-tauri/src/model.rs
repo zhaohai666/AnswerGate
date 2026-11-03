@@ -278,6 +278,21 @@ pub struct ParentConfig {
     pub password_hash: Option<String>,
 }
 
+/// 超时动作（v2.1 新增）：使用时长到点后对目标软件的处理方式。
+///
+/// - `kill`（默认，v2 行为）：两段式终止目标进程，答题通过后重新拉起；
+/// - `pause`：不退出程序，把目标软件置前并模拟一次按键（默认空格）暂停播放，
+///   答题通过后自动再按一次恢复播放。软管控：目标进程保持存活。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum TimeoutAction {
+    /// 终止目标进程（v2 默认）。
+    #[default]
+    Kill,
+    /// 模拟按键暂停 / 恢复（v2.1 软管控，Bilibili 等视频类软件空格=暂停）。
+    Pause,
+}
+
 /// [monitor] 段配置（v2：使用时长管控全局参数）。
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct MonitorConfig {
@@ -290,10 +305,20 @@ pub struct MonitorConfig {
     /// 每次解锁允许的最多轮次（含续期）；0 = 不限。
     #[serde(default)]
     pub max_rounds: u32,
+    /// 超时动作：kill = 关闭目标程序（v2 默认）；pause = 模拟按键暂停不退出（v2.1 软管控）。
+    #[serde(default)]
+    pub timeout_action: TimeoutAction,
+    /// pause 模式模拟按键的 macOS 虚拟键码（默认 49 = 空格；Bilibili 空格 = 暂停/播放）。
+    /// Windows 固定发送媒体播放/暂停键（VK_MEDIA_PLAY_PAUSE），忽略此值。
+    #[serde(default = "default_pause_key_code")]
+    pub pause_key_code: u16,
 }
 
 fn default_min_use_minutes() -> f64 {
     0.1
+}
+fn default_pause_key_code() -> u16 {
+    49
 }
 
 impl Default for MonitorConfig {
@@ -302,6 +327,8 @@ impl Default for MonitorConfig {
             fast_test: false,
             min_use_minutes: default_min_use_minutes(),
             max_rounds: 0,
+            timeout_action: TimeoutAction::Kill,
+            pause_key_code: default_pause_key_code(),
         }
     }
 }

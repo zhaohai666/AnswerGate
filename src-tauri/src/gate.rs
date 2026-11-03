@@ -76,6 +76,9 @@ pub struct GateState {
     /// 纳管目标 id（v2：重启后据此查 use_minutes 续算）。
     #[serde(default)]
     pub managed_target_id: Option<String>,
+    /// 目标软件暂停中（v2.1 pause 模式：超时按键暂停后保持纳管字段，进程存活）。
+    #[serde(default)]
+    pub paused: bool,
     #[serde(skip)]
     pub active_paper: Option<Paper>,
 }
@@ -95,6 +98,7 @@ impl GateState {
             round_started_epoch: None,
             managed_pid: None,
             managed_target_id: None,
+            paused: false,
             active_paper: None,
         }
     }
@@ -113,6 +117,7 @@ impl GateState {
         self.round_started_epoch = None;
         self.managed_pid = None;
         self.managed_target_id = None;
+        self.paused = false;
     }
 
     /// 冷却剩余秒数；不在冷却或已归零返回 None。
@@ -273,6 +278,34 @@ impl GateState {
         Ok(())
     }
 
+    /// 进入超时答题（v2.1 pause 模式专用）：Using → Quiz{Timeup}，**保留纳管字段**。
+    ///
+    /// 与 `begin_quiz_reason`（kill 模式，清纳管字段）不同：pause 模式下目标进程
+    /// 仍存活（仅被按键暂停），pid/target_id 必须保留，供答题通过后 `extend_round`
+    /// 原地恢复播放（不重新拉起）。`paused=true` 持久化。
+    pub fn begin_timeup_paused(
+        &mut self,
+        level: Level,
+        target_id: Option<String>,
+        now: i64,
+    ) -> Result<(), AppError> {
+        if let Some(remaining_sec) = self.cooldown_remaining(now) {
+            return Err(AppError::CooldownActive { remaining_sec });
+        }
+        if self.phase != GatePhase::Using {
+            return Err(AppError::InvalidInput(
+                "仅使用中可进入暂停答题".to_string(),
+            ));
+        }
+        self.phase = GatePhase::Quiz;
+        self.current_level = Some(level);
+        self.selected_target_id = target_id;
+        self.quiz_reason = QuizReason::Timeup;
+        self.paused = true;
+        self.active_paper = None;
+        Ok(())
+    }
+
     /// Using 进入的公共落盘字段。
     fn enter_using(&mut self, target_id: &str, pid: i32, now: i64) {
         self.phase = GatePhase::Using;
@@ -280,6 +313,7 @@ impl GateState {
         self.round_started_epoch = Some(now);
         self.managed_pid = Some(pid);
         self.managed_target_id = Some(target_id.to_string());
+        self.paused = false;
         self.active_paper = None;
     }
 

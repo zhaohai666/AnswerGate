@@ -31,6 +31,14 @@ fast_test = false
 min_use_minutes = 0.1
 # 每次解锁允许的最多轮次（含续期）；0 = 不限
 max_rounds = 0
+# 超时动作：
+#   kill  = 关闭目标程序（默认，强管控）
+#   pause = 不退出程序，模拟按键暂停（如 Bilibili 空格暂停），答题通过后自动恢复播放
+#           注意：pause 需要在 系统设置 → 隐私与安全性 → 辅助功能 中勾选 AnswerGate；
+#           按键发送失败时自动回退为 kill
+timeout_action = "pause"
+# pause 模式模拟按键的虚拟键码（macOS）：默认 49 = 空格；Windows 固定发媒体播放/暂停键，忽略此值
+pause_key_code = 49
 
 # [log]
 # enable = true

@@ -36,6 +36,11 @@ fn sanitize(cfg: &mut AppConfig) {
         tracing::warn!("config.monitor.min_use_minutes 非法，回退默认值 0.1");
         cfg.monitor.min_use_minutes = 0.1;
     }
+    // [monitor]：pause_key_code 为 0（无效虚拟键码）回退 49（空格）
+    if cfg.monitor.pause_key_code == 0 {
+        tracing::warn!("config.monitor.pause_key_code 为 0，回退默认值 49（空格）");
+        cfg.monitor.pause_key_code = 49;
+    }
     // [[target_apps]]：use_minutes 低于下限/非法 → 回退下限并告警（架构 #4：最小 0.1）
     let min = cfg.monitor.min_use_minutes;
     for t in &mut cfg.target_apps {

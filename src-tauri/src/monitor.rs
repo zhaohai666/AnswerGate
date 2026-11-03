@@ -148,6 +148,106 @@ fn terminate_windows(pid: i32) -> bool {
     ok
 }
 
+// ---------- v2.1 pause 模式：模拟按键暂停 / 恢复（软管控，不退出程序） ----------
+
+/// 构造「把指定 PID 的进程置前」的 AppleScript 表达式（纯函数，供测试与实现复用）。
+#[cfg(not(target_os = "windows"))]
+pub fn osascript_focus_args(pid: i32) -> String {
+    format!(
+        "tell application \"System Events\" to set frontmost of (first process whose unix id is {}) to true",
+        pid
+    )
+}
+
+/// 构造「发送一次虚拟键码按键」的 AppleScript 表达式（纯函数，供测试与实现复用）。
+#[cfg(not(target_os = "windows"))]
+pub fn osascript_keycode_args(key_code: u16) -> String {
+    format!("tell application \"System Events\" to key code {}", key_code)
+}
+
+/// 对目标进程模拟一次按键（pause/resume 共用：空格类键码即切换暂停/播放）。
+///
+/// 流程（macOS）：先把目标进程置前（按 pid 定位，避免依赖进程名）→ 短暂等待
+/// 让其成为前台 → 发送虚拟键码。**需要系统授予「辅助功能」权限**，未授权时
+/// osascript 失败，调用方应回退 terminate（见 commands::handle_timeout）。
+///
+/// Windows：全局发送媒体播放/暂停键（VK_MEDIA_PLAY_PAUSE = 0xB3，SendInput），
+/// 无需焦点，`key_code` 参数忽略。
+///
+/// 返回按键是否发送成功（不校验目标软件是否真的暂停——应用层边界）。
+pub fn toggle_playback_key(pid: i32, key_code: u16) -> bool {
+    if pid <= 0 {
+        return false;
+    }
+    #[cfg(target_os = "windows")]
+    {
+        toggle_playback_key_windows()
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        toggle_playback_key_unix(pid, key_code)
+    }
+}
+
+#[cfg(not(target_os = "windows"))]
+fn toggle_playback_key_unix(pid: i32, key_code: u16) -> bool {
+    let focus = osascript_focus_args(pid);
+    let key = osascript_keycode_args(key_code);
+    let ok = Command::new("osascript")
+        .args(["-e", &focus, "-e", "delay 0.3", "-e", &key])
+        .status()
+        .map(|s| s.success())
+        .unwrap_or(false);
+    if !ok {
+        tracing::warn!(
+            pid,
+            key_code,
+            event = "playback_key_failed",
+            "模拟按键失败（大概率缺少「辅助功能」权限），请系统设置 → 隐私与安全性 → 辅助功能 中勾选 AnswerGate"
+        );
+    }
+    ok
+}
+
+#[cfg(target_os = "windows")]
+fn toggle_playback_key_windows() -> bool {
+    // VK_MEDIA_PLAY_PAUSE（0xB3）media key 经 SendInput 发送，无需目标前台焦点。
+    // T01 同款占位策略：保证编译通过，真机回归在 T05（Windows 真机）。
+    let script = "\
+$sig='[DllImport(\"user32.dll\")] public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtra);'; \
+Add-Type -MemberDefinition $sig -Name K -Namespace W; \
+[W.K]::keybd_event(0xB3,0,0,[UIntPtr]::Zero); \
+[W.K]::keybd_event(0xB3,0,2,[UIntPtr]::Zero);";
+    let ok = Command::new("powershell")
+        .args(["-NoProfile", "-NonInteractive", "-Command", script])
+        .status()
+        .map(|s| s.success())
+        .unwrap_or(false);
+    if !ok {
+        tracing::warn!(event = "playback_key_failed", "Windows 媒体键发送失败");
+    }
+    ok
+}
+
+/// pause 模式超时动作：把目标软件置前并模拟一次暂停键。
+/// 进程保持存活（不退出）；返回按键是否发送成功，失败由调用方决定回退策略。
+pub fn pause_target(pid: i32, key_code: u16) -> bool {
+    let ok = toggle_playback_key(pid, key_code);
+    if ok {
+        tracing::info!(pid, key_code, event = "target_paused", "已发送暂停按键，目标进程保持存活");
+    }
+    ok
+}
+
+/// pause 模式续期动作：再按一次暂停/播放键恢复播放（与暂停是同一个切换键）。
+pub fn resume_target(pid: i32, key_code: u16) -> bool {
+    let ok = toggle_playback_key(pid, key_code);
+    if ok {
+        tracing::info!(pid, key_code, event = "target_resumed", "已发送恢复按键，继续本轮计时");
+    }
+    ok
+}
+
 /// 轮次剩余秒数：`round_started_epoch + use_minutes*60 - now`；≤0 表示到点。
 ///
 /// - `use_minutes` 支持小数（U10 加速档：如 0.1 分钟 = 6 秒）

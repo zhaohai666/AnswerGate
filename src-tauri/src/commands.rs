@@ -21,7 +21,9 @@ use tauri::{AppHandle, Emitter, Manager, State};
 use crate::config;
 use crate::error::AppError;
 use crate::gate::{GatePhase, GateState, QuizReason};
-use crate::model::{Answer, AppConfig, GradeResult, Level, PaperView, Question, TargetApp};
+use crate::model::{
+    Answer, AppConfig, GradeResult, Level, PaperView, Question, TargetApp, TimeoutAction,
+};
 use crate::monitor;
 use crate::quiz;
 use crate::unlock;
@@ -316,6 +318,44 @@ pub fn do_launch_target(
             ));
         }
     }
+    // v2.1 pause 模式续期：目标进程仍在（被暂停），原地恢复播放而非重新拉起。
+    // 条件：pause 模式 + Passed{Timeup} + paused 标志 + 有纳管句柄；
+    // 进程已死（中途被手动退出等）则清纳管字段，落回正常 launch 流程。
+    if state.config.monitor.timeout_action == TimeoutAction::Pause {
+        let resume_spec = {
+            let gate = state.gate.lock().unwrap();
+            if gate.paused
+                && gate.quiz_reason == QuizReason::Timeup
+                && gate.phase == GatePhase::Passed
+            {
+                gate.managed_pid.zip(gate.managed_target_id.clone())
+            } else {
+                None
+            }
+        };
+        if let Some((pid, target_id)) = resume_spec {
+            if monitor::alive(pid) {
+                let key_code = state.config.monitor.pause_key_code;
+                monitor::resume_target(pid, key_code);
+                let round_sec = round_sec_for(state, Some(&target_id));
+                {
+                    let mut gate = state.gate.lock().unwrap();
+                    gate.extend_round(&target_id, pid, now_ts)?;
+                    gate.save(&state.state_file())?;
+                }
+                tracing::info!(event = "round_start", target = %target_id, pid, mode = "pause_resume", "恢复播放，续期成功（未重新拉起）");
+                spawn_using_monitor(app.clone(), round_sec);
+                return Ok(());
+            }
+            // 进程已死：清纳管字段，落回正常 launch（selected_target_id 仍指向该目标）
+            tracing::warn!(pid, event = "pause_resume_dead", "暂停中进程已退出，改走重新拉起");
+            let mut gate = state.gate.lock().unwrap();
+            gate.paused = false;
+            gate.managed_pid = None;
+            gate.round_started_epoch = None;
+            let _ = gate.save(&state.state_file());
+        }
+    }
     // 选目标：优先 selected_target_id；未选且当前平台仅一个可用目标时自动选中
     let target: TargetApp = {
         let targets = &state.config.target_apps;
@@ -577,7 +617,12 @@ pub fn spawn_using_monitor(app: AppHandle, round_sec: i64) {
     });
 }
 
-/// 超时收尾：kill → 置顶 → 自动进入超时答题（Timeup）→ emit `gate://timeout-reached`。
+/// 超时收尾：按 `[monitor].timeout_action` 分流 →
+/// - kill（默认）：两段式终止 → 置顶 → 自动进入超时答题（Timeup，清纳管字段）；
+/// - pause（v2.1 软管控）：置前 + 模拟按键暂停（进程存活，保留纳管字段）→ 置顶 →
+///   自动进入超时答题；按键失败（如缺辅助功能权限）自动回退 kill，不放任继续使用。
+///
+/// 两者最后均 emit `gate://timeout-reached`。
 fn handle_timeout(app: &AppHandle, state: &AppState, round_sec: i64, now_ts: i64) {
     let (pid, target_id, level) = {
         let gate = state.gate.lock().unwrap();
@@ -587,10 +632,25 @@ fn handle_timeout(app: &AppHandle, state: &AppState, round_sec: i64, now_ts: i64
             gate.current_level,
         )
     };
-    // 1) 两段式终止目标进程（U8）
+    let pause_mode = state.config.monitor.timeout_action == TimeoutAction::Pause;
+    // 1) 超时动作：kill 或 pause（pause 失败回退 kill，U8 语义：窗口置顶仍保管控）
     if let Some(pid) = pid {
-        let killed = monitor::terminate(pid);
-        tracing::info!(event = "timeout_kill", pid, killed, "使用时长到点，终止目标进程");
+        if pause_mode {
+            let key_code = state.config.monitor.pause_key_code;
+            let paused = monitor::pause_target(pid, key_code);
+            if !paused {
+                tracing::warn!(
+                    pid,
+                    event = "timeout_pause_fallback_kill",
+                    "暂停按键失败，回退终止目标进程（不放任继续使用）"
+                );
+                let killed = monitor::terminate(pid);
+                tracing::info!(event = "timeout_kill", pid, killed, "使用时长到点，终止目标进程");
+            }
+        } else {
+            let killed = monitor::terminate(pid);
+            tracing::info!(event = "timeout_kill", pid, killed, "使用时长到点，终止目标进程");
+        }
     }
     // 2) AnswerGate 窗口置顶带回前台
     if let Some(window) = app.get_webview_window("main") {
@@ -605,12 +665,27 @@ fn handle_timeout(app: &AppHandle, state: &AppState, round_sec: i64, now_ts: i64
         .and_then(|id| state.config.target_apps.iter().find(|t| t.id == id))
         .map(|t| t.name.clone())
         .unwrap_or_default();
+    let pause_still_alive = pause_mode
+        && state
+            .gate
+            .lock()
+            .unwrap()
+            .managed_pid
+            .map(monitor::alive)
+            .unwrap_or(false);
     let quiz_result = quiz::make_paper(&state.bank, level, count, exclude_fill_blank).and_then(
         |paper| {
             let mut gate = state.gate.lock().unwrap();
             // 时间继续流逝可能已越过本轮时长——以当前时间重验剩余，仅作日志（到点即超时答题）
             let _ = gate.round_remaining_sec(now_ts, round_sec);
-            gate.begin_quiz_reason(level, target_id.clone(), QuizReason::Timeup, now())?;
+            if pause_still_alive {
+                // pause 模式：进程存活被暂停，保留纳管字段（pid/target_id），
+                // 答题通过后 extend_and_relaunch 原地恢复播放
+                gate.begin_timeup_paused(level, target_id.clone(), now())?;
+            } else {
+                // kill 模式（或 pause 回退 kill 后进程已亡）：清纳管字段
+                gate.begin_quiz_reason(level, target_id.clone(), QuizReason::Timeup, now())?;
+            }
             gate.set_active_paper(paper.clone());
             gate.save(&state.state_file())?;
             Ok(paper.to_view())
@@ -627,8 +702,13 @@ fn handle_timeout(app: &AppHandle, state: &AppState, round_sec: i64, now_ts: i64
             // 入题失败兜底（如题库异常）：放弃本轮回 Idle，不放任目标继续使用
             tracing::warn!(error = %e, event = "timeout_kill", result = "quiz_start_failed", "超时后进入答题失败，放弃本轮");
             let mut gate = state.gate.lock().unwrap();
+            let pid = gate.managed_pid;
             gate.abandon_round();
             let _ = gate.save(&state.state_file());
+            if let Some(pid) = pid {
+                // pause 模式下进程可能仍存活：入题失败即放管，必须终止
+                monitor::terminate(pid);
+            }
             let _ = app.emit("gate://process-exited", serde_json::json!({}));
         }
     }
