@@ -133,40 +133,59 @@ pub fn launch_macos_managed(app_path: &str) -> Result<Option<i32>, AppError> {
     Ok(pid_of_app(app_path))
 }
 
-/// macOS：按 app 路径探测运行中进程的 PID。
+/// macOS：按 app 路径探测运行中主进程的 PID（v2 加固）。
 ///
-/// 启动竞态处理（U7/U9）：launchd 托管进程在 App 完全启动前 `unix id` 无值，
-/// 以 200ms 间隔重试最多 25 次（5s 窗口）：
-/// ① 主选 osascript `unix id of application "<名字>"`（按名字精确匹配）；
-/// ② 兜底 `pgrep -f <完整 app 路径>`（匹配完整路径，避免同名误杀）。
-/// 均取不到返回 `None`。
+/// 多策略冗余（任一命中即返回），每条策略命中后都做"存活 + 500ms 稳定性复核"
+/// 防取到瞬时/正在退出的进程：
+/// ① **精确 pgrep**：`pgrep -f "<app>/Contents/MacOS/<CFBundleExecutable>"`
+///    ——匹配主二进制完整路径，天然排除 Helper（Helper 在 Contents/Frameworks 下），
+///    无需辅助功能权限，为主路径；
+/// ② osascript System Events：`unix id of (first process whose name is "<名>")`
+///    ——原 `unix id of application` 形式在本机 AppleScript 环境中为**语法错误 (-2740)**，
+///    已改为 System Events tell 形式（需辅助功能权限，AnswerGate 已授权）；
+/// ③ 兜底宽 pgrep + 主进程校验（`ps` 校验 cmdline 含 `Contents/MacOS/` 且非 Helper）。
+///
+/// `open -a` 由 launchd 托管，主进程完全启动前可能尚未注册；以 200ms 间隔重试
+/// 最多 [`PROBE_ATTEMPTS`] 次（约 12s 窗口）：重型应用（如 B 站 Electron）冷启动慢。
 #[cfg(target_os = "macos")]
 pub fn pid_of_app(app_path: &str) -> Option<i32> {
     let app_name = std::path::Path::new(app_path)
         .file_stem()
         .map(|s| s.to_string_lossy().to_string())
         .unwrap_or_else(|| app_path.to_string());
-    // v2.1：探测窗口 5s→10s（B 站等重型应用冷启动慢，5s 内可能尚未注册到 AppleScript）
-    for _ in 0..50 {
-        if let Some(pid) = pid_via_osascript(&app_name).or_else(|| pid_via_pgrep(app_path)) {
-            // v2.1 加固：候选必须通过主进程校验 + 600ms 稳定性复核
-            // （防取到 Helper/瞬时进程——会随后退出被误判「进程意外退出」而放弃整轮纳管）
-            if !is_main_app_process(pid, app_path) {
-                std::thread::sleep(std::time::Duration::from_millis(200));
-                continue;
-            }
-            std::thread::sleep(std::time::Duration::from_millis(600));
-            if alive(pid) && is_main_app_process(pid, app_path) {
-                tracing::info!(
-                    pid,
-                    target = %app_path,
-                    event = "monitor",
-                    result = "pid_acquired",
-                    "已取得目标主进程句柄（含稳定性复核）"
-                );
+    let exec_name = bundle_executable_name(app_path).unwrap_or_else(|| app_name.clone());
+    let main_bin = format!("{}/Contents/MacOS/{}", app_path, exec_name);
+    tracing::info!(
+        target = %app_path,
+        exec = %exec_name,
+        event = "monitor",
+        result = "pid_probe_start",
+        "开始探测目标主进程 PID"
+    );
+    for attempt in 0..PROBE_ATTEMPTS {
+        // ① 精确 pgrep 主二进制路径（首选，无需辅助功能权限）
+        if let Some(pid) = pgrep_exact(&main_bin) {
+            if stabilize(pid) {
+                tracing::info!(pid, target = %app_path, event = "monitor", result = "pid_acquired", "精确 pgrep 取得主进程句柄");
                 return Some(pid);
             }
-            tracing::warn!(pid, event = "monitor", result = "pid_unstable", "候选 pid 稳定性复核失败，继续探测");
+        }
+        // ② osascript System Events（需辅助功能权限）
+        if let Some(pid) = pid_via_osascript_sys(&app_name) {
+            if stabilize(pid) {
+                tracing::info!(pid, target = %app_path, event = "monitor", result = "pid_acquired", "osascript 取得主进程句柄");
+                return Some(pid);
+            }
+        }
+        // ③ 兜底宽 pgrep + 主进程校验
+        if let Some(pid) = pgrep_broad_then_validate(app_path) {
+            if stabilize(pid) {
+                tracing::info!(pid, target = %app_path, event = "monitor", result = "pid_acquired", "宽 pgrep+校验取得主进程句柄");
+                return Some(pid);
+            }
+        }
+        if attempt == 0 {
+            tracing::debug!(target = %app_path, event = "monitor", "首次探测未命中，持续重试中（冷启动/尚未注册）");
         }
         std::thread::sleep(std::time::Duration::from_millis(200));
     }
@@ -174,18 +193,21 @@ pub fn pid_of_app(app_path: &str) -> Option<i32> {
         target = %app_path,
         event = "monitor",
         result = "pid_timeout",
-        "10s 窗口内未取得 PID，放弃纳管（宁不管控不误杀）"
+        "12s 窗口内未取得 PID，放弃纳管（宁不管控不误杀）"
     );
     None
 }
 
-/// osascript 主路径：`unix id of application "<name>"`。
+/// osascript System Events 形式（修复原 `unix id of application` 的 -2740 语法错误）。
+/// 需辅助功能权限；缺权限返回 -10004（非成功），调用方忽略即可。
 #[cfg(target_os = "macos")]
-fn pid_via_osascript(app_name: &str) -> Option<i32> {
-    let script = format!("unix id of application \"{}\"", app_name);
+fn pid_via_osascript_sys(app_name: &str) -> Option<i32> {
+    let script = format!(
+        "tell application \"System Events\" to get unix id of (first process whose name is \"{}\")",
+        app_name
+    );
     let out = std::process::Command::new("osascript")
-        .arg("-e")
-        .arg(script)
+        .args(["-e", &script])
         .output()
         .ok()?;
     if !out.status.success() {
@@ -194,25 +216,83 @@ fn pid_via_osascript(app_name: &str) -> Option<i32> {
     String::from_utf8_lossy(&out.stdout).trim().parse::<i32>().ok()
 }
 
-/// pgrep 兜底：`pgrep -f <完整 app 路径>`，候选逐一做主进程校验
-/// （Electron/多进程应用的 Helper 子进程命令行同样包含 app 路径，
-/// 误取 Helper 的 pid 会在其退出后被误判「进程意外退出」——v2.1 实测 bug）。
+/// 兜底：宽 pgrep 匹配 app 路径（正则转义），候选逐一做主进程校验（排除 Helper）。
 #[cfg(target_os = "macos")]
-fn pid_via_pgrep(app_path: &str) -> Option<i32> {
+fn pgrep_broad_then_validate(app_path: &str) -> Option<i32> {
+    let pattern = regex_escape(app_path);
     let out = std::process::Command::new("pgrep")
-        .arg("-f")
-        .arg(app_path)
+        .args(["-f", &pattern])
         .output()
         .ok()?;
     if !out.status.success() {
         return None;
     }
-    let stdout = String::from_utf8_lossy(&out.stdout);
-    stdout
+    String::from_utf8_lossy(&out.stdout)
         .lines()
         .filter_map(|line| line.trim().parse::<i32>().ok())
         .find(|pid| is_main_app_process(*pid, app_path))
 }
+
+/// 精确 pgrep：匹配主二进制完整路径（正则转义后），天然排除 Helper 子进程。
+#[cfg(target_os = "macos")]
+fn pgrep_exact(main_bin: &str) -> Option<i32> {
+    let pattern = regex_escape(main_bin);
+    let out = std::process::Command::new("pgrep")
+        .args(["-f", &pattern])
+        .output()
+        .ok()?;
+    if !out.status.success() {
+        return None;
+    }
+    String::from_utf8_lossy(&out.stdout)
+        .lines()
+        .filter_map(|line| line.trim().parse::<i32>().ok())
+        .next()
+}
+
+/// 正则转义（pgrep -f 按正则匹配命令行，路径中的 `.` 等需转义以防歧义匹配）。
+#[cfg(target_os = "macos")]
+fn regex_escape(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    for c in s.chars() {
+        if ".+*?()[]{}|^$\\".contains(c) {
+            out.push('\\');
+        }
+        out.push(c);
+    }
+    out
+}
+
+/// 稳定性复核：当前存活 + 500ms 后依旧存活，避免取到瞬时/正在退出的进程。
+#[cfg(target_os = "macos")]
+fn stabilize(pid: i32) -> bool {
+    if !alive(pid) {
+        return false;
+    }
+    std::thread::sleep(std::time::Duration::from_millis(500));
+    alive(pid)
+}
+
+/// 读取 .app 的 CFBundleExecutable（Info.plist），用于构造精确主二进制路径。
+#[cfg(target_os = "macos")]
+fn bundle_executable_name(app_path: &str) -> Option<String> {
+    let plist = format!("{}/Contents/Info.plist", app_path);
+    let out = std::process::Command::new("/usr/libexec/PlistBuddy")
+        .args(["-c", "Print :CFBundleExecutable", &plist])
+        .output()
+        .ok()?;
+    if out.status.success() {
+        let s = String::from_utf8_lossy(&out.stdout).trim().to_string();
+        if !s.is_empty() {
+            return Some(s);
+        }
+    }
+    None
+}
+
+/// 探测窗口重试次数（200ms × 60 ≈ 12s，覆盖重型应用冷启动）。
+#[cfg(target_os = "macos")]
+const PROBE_ATTEMPTS: usize = 60;
 
 /// 校验 pid 是否为 app 的主进程：命令行必须是
 /// `<app_path>/Contents/MacOS/<可执行名>` 且不含 "Helper"。
@@ -282,5 +362,29 @@ mod tests {
         let err = launch_macos("/Applications/NoSuchApp_AnswerGate_XYZ.app").unwrap_err();
         assert_eq!(err.code(), "Unlock");
         assert!(err.to_string().contains("不存在"));
+    }
+
+    #[test]
+    fn regex_escape_escapes_special_chars() {
+        assert_eq!(regex_escape("/Applications/App.app/Contents/MacOS/x"),
+                   "/Applications/App\\.app/Contents/MacOS/x");
+        assert_eq!(regex_escape("a.b+c*d"), "a\\.b\\+c\\*d");
+    }
+
+    #[test]
+    fn pgrep_exact_finds_running_process() {
+        // 启动一个长时 sleep，验证精确 pgrep 能命中其主二进制路径
+        let mut child = std::process::Command::new("/bin/sleep")
+            .arg("30")
+            .spawn()
+            .expect("spawn sleep 失败");
+        let _ = child.id();
+        std::thread::sleep(std::time::Duration::from_millis(300));
+        let found = pgrep_exact("/bin/sleep");
+        let _ = child.kill();
+        assert!(
+            found.is_some(),
+            "精确 pgrep 应找到 /bin/sleep 主进程（验证 PID 探测主路径可用）"
+        );
     }
 }
