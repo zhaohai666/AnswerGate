@@ -11,6 +11,7 @@ import type {
   Level,
   MonitorStateView,
   PaperView,
+  QuizReason,
   RulesSummary,
   TargetAppView,
 } from "./types";
@@ -54,10 +55,16 @@ export const monitorTotal = writable<number>(0);
 export const quizBanner = writable<string | null>(null);
 /** 本轮答题是否源自超时（ResultPage 据此走「继续使用」分支） */
 export const cameFromTimeout = writable<boolean>(false);
+/** 本轮答题是否源自独立监控拦截（v3：孩子绕过门禁自己打开了目标软件） */
+export const cameFromWatch = writable<boolean>(false);
+/** 本轮答题原因（v3：initial / timeup / watch），用于显示对应的题量与及格线门槛 */
+export const quizReason = writable<QuizReason>("initial");
 /** 关窗二次确认弹窗开关（gate://close-requested 置位） */
 export const showExitConfirm = writable<boolean>(false);
 /** 底部提示条（进程退出/提前结束等通知） */
 export const exitNotice = writable<string | null>(null);
+/** 系统权限告警（v3：辅助功能权限缺失等，需常驻显示直到问题解决） */
+export const permissionWarning = writable<string | null>(null);
 
 /** 应用启动引导：拉规则/目标/门禁状态；冷却进冷却页、Using 进监控页（重启续算） */
 export async function bootstrap(): Promise<void> {
@@ -69,6 +76,10 @@ export async function bootstrap(): Promise<void> {
     ]);
     rules.set(r);
     targets.set(t);
+    // 恢复答题原因（v3）：重启后仍能显示正确的题量/及格线门槛
+    quizReason.set(gs.quiz_reason ?? "initial");
+    if (gs.quiz_reason === "watch") cameFromWatch.set(true);
+    if (gs.quiz_reason === "timeup") cameFromTimeout.set(true);
     if (gs.phase === "cooldown") {
       cooldownRemaining.set(gs.cooldown_remaining_sec);
       page.set("cooldown");
@@ -78,6 +89,18 @@ export async function bootstrap(): Promise<void> {
       // 重启续算场景：后端 setup 已恢复监控线程，前端直接进使用中页
       const ok = await enterMonitoring();
       if (ok) return;
+    }
+    if (gs.phase === "quiz") {
+      // 答题中重启（含 v3 监控拦截）：后端已持久化试卷，直接恢复答题页
+      try {
+        const p = await api.getActivePaper();
+        paper.set(p);
+        result.set(null);
+        page.set("quiz");
+        return;
+      } catch {
+        // 试卷已失效：落回学段页
+      }
     }
     page.set("level");
   } catch (e) {
@@ -120,10 +143,13 @@ export function handleUsingTick(remainingSec: number, warning: boolean): void {
 export async function handleTimeoutReached(targetName: string): Promise<void> {
   monitor.set(null);
   cameFromTimeout.set(true);
+  cameFromWatch.set(false);
+  quizReason.set("timeup");
+  const { count, passLine } = strictRule();
   quizBanner.set(
     targetName
-      ? `使用时间到！${targetName} 已暂停，答题通过后可继续使用`
-      : "使用时间到！答题通过后可继续使用",
+      ? `使用时间到！${targetName} 已暂停，答对 ${count} 题（及格线 ${passLine}%）后可继续使用`
+      : `使用时间到！答对 ${count} 题（及格线 ${passLine}%）后可继续使用`,
   );
   try {
     const p = await api.getActivePaper();
@@ -150,6 +176,59 @@ export function handleProcessExited(): void {
 export function handleMonitorStopped(): void {
   monitor.set(null);
   if (get(page) === "monitoring") {
+    page.set("level");
+  }
+}
+
+// ---------- v3 独立监控拦截（watchdog） ----------
+
+/** 严格档门槛（超时续期 / 监控拦截共用）：3 题全对 */
+function strictRule(): { count: number; passLine: number } {
+  const r = get(rules);
+  return {
+    count: r?.timeup_question_count ?? 3,
+    passLine: Math.round((r?.timeup_pass_score ?? 1) * 100),
+  };
+}
+
+/**
+ * gate://watch-intercepted：检测到目标软件被绕过本程序启动。
+ *
+ * 后端已做三件事：抢前台 + 暂停视频（不删进程）+ 自动开严格档试卷。
+ * 前端据此进答题页；答对后走 `launch()` → 后端**接管既有进程**并恢复播放。
+ */
+export async function handleWatchIntercepted(targetName: string): Promise<void> {
+  monitor.set(null);
+  cameFromTimeout.set(false);
+  cameFromWatch.set(true);
+  quizReason.set("watch");
+  const { count, passLine } = strictRule();
+  quizBanner.set(
+    targetName
+      ? `检测到你绕过了门禁直接打开 ${targetName}！视频已暂停，答对 ${count} 题（及格线 ${passLine}%）才能继续观看`
+      : `检测到你绕过了门禁直接打开目标软件！视频已暂停，答对 ${count} 题（及格线 ${passLine}%）才能继续观看`,
+  );
+  try {
+    const p = await api.getActivePaper();
+    paper.set(p);
+    result.set(null);
+    page.set("quiz");
+  } catch (e) {
+    // 取卷失败兜底：回学段页（后端已放弃拦截，不会放任目标继续使用）
+    exitNotice.set(errText(e));
+    page.set("level");
+  }
+}
+
+/** gate://watch-abandoned：拦截作废（目标已退出 / 配置变更） */
+export function handleWatchAbandoned(): void {
+  paper.set(null);
+  result.set(null);
+  cameFromWatch.set(false);
+  quizBanner.set(null);
+  launched.set(false);
+  if (get(page) === "quiz" || get(page) === "result") {
+    exitNotice.set("目标软件已退出，本次拦截已取消");
     page.set("level");
   }
 }
@@ -183,6 +262,8 @@ export async function beginQuiz(targetId: string | null): Promise<void> {
   try {
     selectedTargetId.set(targetId);
     cameFromTimeout.set(false);
+    cameFromWatch.set(false);
+    quizReason.set("initial");
     quizBanner.set(null);
     const p = await api.startQuiz(level, targetId);
     paper.set(p);
@@ -198,6 +279,7 @@ export async function beginQuiz(targetId: string | null): Promise<void> {
 
 /** 进入冷却页（剩余秒数以 Rust 侧 get_gate_state 为准） */
 export async function gotoCooldown(): Promise<void> {  cameFromTimeout.set(false);
+  cameFromWatch.set(false);
   quizBanner.set(null);
   try {
     const gs = await api.getGateState();
@@ -310,6 +392,8 @@ export function backToLevel(): void {
   launchError.set(null);
   launched.set(false);
   cameFromTimeout.set(false);
+  cameFromWatch.set(false);
+  quizReason.set("initial");
   quizBanner.set(null);
   monitor.set(null);
   page.set("level");

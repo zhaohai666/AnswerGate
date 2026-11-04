@@ -19,7 +19,7 @@ use std::path::Path;
 use serde::{Deserialize, Serialize};
 
 use crate::error::AppError;
-use crate::model::{Level, Paper};
+use crate::model::{Level, Paper, PauseState};
 
 /// 状态文件名：非常规隐藏名（架构 U1），内容为 JSON。
 pub const STATE_FILE_NAME: &str = ".answergate_gate_state.json";
@@ -47,6 +47,8 @@ pub enum QuizReason {
     Initial,
     /// 使用时长到点后的超时答题（判分通过走续期拉起）。
     Timeup,
+    /// 独立监控拦截答题（v3）：目标被绕过本程序启动，要求先答题才纳入计时。
+    Watch,
 }
 
 /// 门禁状态（active_paper 仅内存持有，不落盘——答案不持久化）。
@@ -79,6 +81,23 @@ pub struct GateState {
     /// 目标软件暂停中（v2.1 pause 模式：超时按键暂停后保持纳管字段，进程存活）。
     #[serde(default)]
     pub paused: bool,
+    /// 超时那次的**播放状态判定**（v3）。
+    ///
+    /// 用于恢复播放时判定「切换键」该不该发（空格是 toggle 语义，发错会把
+    /// 正在播放的视频反向暂停）：
+    /// - `Paused` → 视频确已暂停 → 答对后发一次切换键即可恢复播放；
+    /// - `Playing` → 暂停键没发成功，视频仍在播 → 答对后**只置前不切换**；
+    /// - `Unknown` → 探测不可用 → 发切换键（与暂停动作对称）。
+    #[serde(default)]
+    pub pause_state: PauseState,
+    /// 独立监控（v3）已触发拦截：目标被绕过本程序启动，正在要求答题。
+    /// 用于避免 watchdog 在答题期间重复触发。
+    #[serde(default)]
+    pub watch_intercepted: bool,
+    /// 独立监控探测到的运行中目标 PID（v3）：拦截答题期间持有，
+    /// 答对后转为 managed_pid（接管而非新拉起）。
+    #[serde(default)]
+    pub watch_pid: Option<i32>,
     #[serde(skip)]
     pub active_paper: Option<Paper>,
 }
@@ -99,6 +118,9 @@ impl GateState {
             managed_pid: None,
             managed_target_id: None,
             paused: false,
+            pause_state: PauseState::Unknown,
+            watch_intercepted: false,
+            watch_pid: None,
             active_paper: None,
         }
     }
@@ -110,6 +132,11 @@ impl GateState {
         self.selected_target_id = None;
         self.current_level = None;
         self.clear_round_fields();
+        // v3：冷却到期回到 Idle 时必须清掉监控拦截标记，
+        // 否则 watchdog 会因 `watch_intercepted=true` 永远不再拦截（死锁）。
+        self.watch_intercepted = false;
+        self.watch_pid = None;
+        self.pause_state = PauseState::Unknown;
     }
 
     /// 清空轮次纳管字段（abandon/离开 Using 共用）。
@@ -118,6 +145,7 @@ impl GateState {
         self.managed_pid = None;
         self.managed_target_id = None;
         self.paused = false;
+        self.pause_state = PauseState::Unknown;
     }
 
     /// 冷却剩余秒数；不在冷却或已归零返回 None。
@@ -283,11 +311,15 @@ impl GateState {
     /// 与 `begin_quiz_reason`（kill 模式，清纳管字段）不同：pause 模式下目标进程
     /// 仍存活（仅被按键暂停），pid/target_id 必须保留，供答题通过后 `extend_round`
     /// 原地恢复播放（不重新拉起）。`paused=true` 持久化。
+    ///
+    /// `pause_state` 记录「超时那次的播放状态判定」：恢复播放时据此决定
+    /// 切换键该不该发（见 `monitor::resume_if_paused`）。
     pub fn begin_timeup_paused(
         &mut self,
         level: Level,
         target_id: Option<String>,
         now: i64,
+        pause_state: PauseState,
     ) -> Result<(), AppError> {
         if let Some(remaining_sec) = self.cooldown_remaining(now) {
             return Err(AppError::CooldownActive { remaining_sec });
@@ -302,8 +334,88 @@ impl GateState {
         self.selected_target_id = target_id;
         self.quiz_reason = QuizReason::Timeup;
         self.paused = true;
+        self.pause_state = pause_state;
         self.active_paper = None;
         Ok(())
+    }
+
+    /// 进入独立监控拦截答题（v3）：Idle → Quiz{Watch}。
+    ///
+    /// 场景：watchdog 检测到目标软件被**绕过本程序**启动（孩子自己点开 B 站），
+    /// 此时要求先答一关，答对后才接管该进程并开始计时。
+    ///
+    /// - 仅允许从 `Idle` 进入（Using/Quiz/Cooldown 期间不重复拦截）；
+    /// - `selected_target_id` 指向被拦截的目标，答对后接管它而非拉起新的；
+    /// - `watch_pid` 记录被拦截的既有进程（供暂停守卫复用，答对后转为 managed_pid）；
+    /// - `watch_intercepted=true` 防止 watchdog 在答题期间重复触发。
+    pub fn begin_watch_intercept(
+        &mut self,
+        level: Level,
+        target_id: Option<String>,
+        pid: i32,
+        now: i64,
+        pause_state: PauseState,
+    ) -> Result<(), AppError> {
+        if let Some(remaining_sec) = self.cooldown_remaining(now) {
+            return Err(AppError::CooldownActive { remaining_sec });
+        }
+        if self.phase != GatePhase::Idle {
+            return Err(AppError::InvalidInput(
+                "仅空闲状态可进入监控拦截答题".to_string(),
+            ));
+        }
+        self.phase = GatePhase::Quiz;
+        self.current_level = Some(level);
+        self.selected_target_id = target_id;
+        self.quiz_reason = QuizReason::Watch;
+        self.watch_intercepted = true;
+        self.watch_pid = Some(pid);
+        // 拦截时目标的播放状态判定（答对后据此决定恢复方式）
+        self.pause_state = pause_state;
+        self.active_paper = None;
+        Ok(())
+    }
+
+    /// 接管一个**已经运行中**的目标进程（v3）：Passed{Watch} → Using。
+    ///
+    /// 与 `begin_using` 的区别：不新拉起进程，而是把 watchdog 探测到的既有 PID
+    /// 纳入纳管并从现在开始计时（用户选择「先答题后计时」语义）。
+    ///
+    /// `force=true` 用于 `WatchMode::Adopt`（不打断、直接接管计时）路径。
+    pub fn adopt_running(
+        &mut self,
+        target_id: &str,
+        pid: i32,
+        now: i64,
+        force: bool,
+    ) -> Result<(), AppError> {
+        if self.phase == GatePhase::Using {
+            return Err(AppError::AlreadyManaged);
+        }
+        if !force
+            && (self.phase != GatePhase::Passed || self.quiz_reason != QuizReason::Watch)
+        {
+            return Err(AppError::InvalidInput(
+                "仅监控拦截答题通过后可接管运行中的目标".to_string(),
+            ));
+        }
+        self.enter_using(target_id, pid, now);
+        self.watch_intercepted = false;
+        self.watch_pid = None;
+        Ok(())
+    }
+
+    /// 放弃监控拦截（v3）：答题失败/放弃 → 回 Idle，清拦截标记。
+    pub fn abandon_watch_intercept(&mut self) {
+        if self.quiz_reason == QuizReason::Watch && self.watch_intercepted {
+            self.watch_intercepted = false;
+            self.watch_pid = None;
+            self.pause_state = PauseState::Unknown;
+            self.phase = GatePhase::Idle;
+            self.active_paper = None;
+            self.selected_target_id = None;
+            self.current_level = None;
+        }
     }
 
     /// Using 进入的公共落盘字段。
@@ -314,6 +426,7 @@ impl GateState {
         self.managed_pid = Some(pid);
         self.managed_target_id = Some(target_id.to_string());
         self.paused = false;
+        self.pause_state = PauseState::Unknown;
         self.active_paper = None;
     }
 

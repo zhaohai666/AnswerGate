@@ -79,15 +79,13 @@ pub fn run() {
     builder
         .setup(|app| {
             let handle = app.handle().clone();
-            // 1) 日志（guard 需活到进程结束：进程生命周期对象，forget 安全）
+            // 1) 日志（同步写：每条立即落盘，进程被杀也不丢日志）
             let app_data = handle.path().app_data_dir().map_err(|e| {
                 Box::new(std::io::Error::other(format!(
                     "无法获取 app_data_dir：{e}"
                 ))) as Box<dyn std::error::Error>
             })?;
-            if let Some(guard) = log::init(&app_data, true) {
-                std::mem::forget(guard);
-            }
+            log::init(&app_data, true);
             // 2) 题库/配置/门禁状态
             let bank_dir = resolve_bank_dir(&handle);
             let state = commands::AppState::new(app_data, &bank_dir)?;
@@ -110,8 +108,10 @@ pub fn run() {
             if using_resume {
                 let managed = handle.state::<commands::AppState>();
                 let round_sec = commands::round_sec_for(&managed, using_target.as_deref());
-                commands::spawn_using_monitor(handle, round_sec);
+                commands::spawn_using_monitor(handle.clone(), round_sec);
             }
+            // 6) v3 独立进程监控：探测「绕过本程序启动」的目标软件并强制答题
+            commands::spawn_watchdog(handle.clone());
             Ok(())
         })
         .on_window_event(|window, event| {

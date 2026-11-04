@@ -16,8 +16,13 @@ export type GatePhase =
   | "cooldown"
   | "using";
 
-/** 答题原因（v2：initial=首次 / timeup=超时答题） */
-export type QuizReason = "initial" | "timeup";
+/**
+ * 答题原因：
+ * - initial：首次解锁（走 quiz.question_count / quiz.pass_score）
+ * - timeup：使用时长到点的续期答题（走 timeup_question_count / timeup_pass_score，默认 3 题全对）
+ * - watch：独立监控拦截（孩子绕过门禁自己打开目标软件）——同样走严格档
+ */
+export type QuizReason = "initial" | "timeup" | "watch";
 
 /** 下发前端的题目视图（无 answer/hint，防作弊约定） */
 export interface QuizItem {
@@ -70,6 +75,10 @@ export interface RulesSummary {
   cool_down_sec: number;
   default_level: Level;
   levels: LevelEntry[];
+  /** 超时续期/监控拦截的题量（v3，默认 3） */
+  timeup_question_count: number;
+  /** 超时续期/监控拦截的及格线（v3，默认 1.0 = 必须全对） */
+  timeup_pass_score: number;
 }
 
 /** 目标软件视图（list_targets） */

@@ -22,7 +22,8 @@ use crate::config;
 use crate::error::AppError;
 use crate::gate::{GatePhase, GateState, QuizReason};
 use crate::model::{
-    Answer, AppConfig, GradeResult, Level, PaperView, Question, TargetApp, TimeoutAction,
+    Answer, AppConfig, GradeResult, Level, PaperView, PauseState, Question, TargetApp,
+    TimeoutAction, WatchMode,
 };
 use crate::monitor;
 use crate::quiz;
@@ -100,6 +101,10 @@ pub struct RulesSummary {
     pub cool_down_sec: u64,
     pub default_level: Level,
     pub levels: Vec<LevelEntry>,
+    /// 超时续期答题的题量（v3）：默认 3 题。
+    pub timeup_question_count: u32,
+    /// 超时续期答题的及格线（v3）：默认 1.0 = 必须全对。
+    pub timeup_pass_score: f32,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -150,6 +155,8 @@ pub fn rules_summary(state: &AppState) -> RulesSummary {
         max_retry: state.config.quiz.max_retry,
         cool_down_sec: state.config.quiz.cool_down_sec,
         default_level: state.config.quiz.default_level,
+        timeup_question_count: state.config.monitor.timeup_question_count,
+        timeup_pass_score: state.config.monitor.timeup_pass_score,
         levels: Level::ALL
             .iter()
             .map(|l| LevelEntry {
@@ -182,6 +189,32 @@ pub fn round_sec_for(state: &AppState, target_id: Option<&str>) -> i64 {
         .map(|t| t.use_minutes)
         .unwrap_or(10.0);
     monitor::round_duration_sec(use_minutes, state.config.monitor.fast_test)
+}
+
+/// 本次答题的及格线（v3）。
+///
+/// - `QuizReason::Timeup`（超时续期）：用 `monitor.timeup_pass_score`（默认 1.0 = 必须全对）；
+/// - `QuizReason::Watch`（监控拦截）：同样走严格档（3 题全对），与超时续期一致；
+/// - `QuizReason::Initial`（首次解锁）：用 `quiz.pass_score`。
+///
+/// 需求：超过 10 分钟后「答对三次题」才能继续 —— 即续期卷必须全对。
+pub fn pass_score_for(state: &AppState, reason: QuizReason) -> f32 {
+    match reason {
+        QuizReason::Timeup | QuizReason::Watch => state.config.monitor.timeup_pass_score,
+        QuizReason::Initial => state.config.quiz.pass_score,
+    }
+}
+
+/// 本次答题的题量（v3）。
+///
+/// - `QuizReason::Timeup`（超时续期）：用 `monitor.timeup_question_count`（默认 3 题）；
+/// - `QuizReason::Watch`（监控拦截）：同严格档（默认 3 题）；
+/// - `QuizReason::Initial`：用 `quiz.question_count`。
+pub fn paper_count_for(state: &AppState, reason: QuizReason) -> usize {
+    match reason {
+        QuizReason::Timeup | QuizReason::Watch => state.config.monitor.timeup_question_count as usize,
+        QuizReason::Initial => state.config.quiz.question_count as usize,
+    }
 }
 
 /// 开始答题：校验目标 → 抽题（Android 过滤填空）→ QUIZ → 持久化 → 下发无答案试卷。
@@ -217,7 +250,10 @@ pub fn do_retry_quiz(state: &AppState, now_ts: i64) -> Result<PaperView, AppErro
     let level = gate.current_level.ok_or_else(|| {
         AppError::InvalidInput("无进行中学段，无法重试（请从学段选择开始）".to_string())
     })?;
-    let count = state.config.quiz.question_count as usize;
+    // v3：重试必须沿用**同一档**题量——超时续期/监控拦截的重试仍是 3 题全对，
+    // 不能借「重试」把门槛降回常规题量。
+    let reason = gate.quiz_reason;
+    let count = paper_count_for(state, reason);
     let exclude_fill_blank = cfg!(target_os = "android");
     let paper = quiz::make_paper(&state.bank, level, count, exclude_fill_blank)?;
     gate.set_active_paper(paper.clone());
@@ -242,21 +278,36 @@ pub fn do_submit_answers(
         _ => return Err(AppError::PaperNotFound(paper_id.to_string())),
     };
     let reason = gate.quiz_reason;
-    let mut result = quiz::grade(&paper, answers, state.config.quiz.pass_score);
+    // v3：及格线按答题原因区分——超时续期必须全对（timeup_pass_score=1.0）
+    let pass_score = pass_score_for(state, reason);
+    let mut result = quiz::grade(&paper, answers, pass_score);
     let cool_down_sec = state.config.quiz.cool_down_sec;
     let phase = gate.record_result(result.passed, reason, cool_down_sec, now_ts);
     result.remaining_retry = gate.remaining_retry;
     // v2.1 防跳过：答错耗尽重试进入冷却时，pause 模式下目标进程仍存活（仅被暂停）——
     // 答题失败即本轮结束，必须关闭目标软件，否则孩子可切回去手动恢复播放绕过冷却。
     // kill 模式此处 managed_pid 已清空，天然无操作。
+    //
+    // v3 需求变更：「哔哩哔哩的视频只暂停，不能删除」——pause 模式下**不得**终止进程，
+    // 改为由暂停守卫维持暂停态（见 `paused_guard_step`，冷却期同样守护）。
     if phase == GatePhase::Cooldown {
+        let kill_allowed = state.config.monitor.timeout_action == TimeoutAction::Kill
+            || state.config.monitor.pause_fallback_kill;
         if let Some(pid) = gate.managed_pid {
-            if monitor::alive(pid) {
-                let killed = monitor::terminate(pid);
+            if kill_allowed {
+                if monitor::alive(pid) {
+                    let killed = monitor::terminate(pid);
+                    tracing::info!(
+                        pid, killed,
+                        event = "cooldown_kill_target",
+                        "答题失败进入冷却，关闭暂停中的目标软件（防绕过冷却）"
+                    );
+                }
+            } else {
                 tracing::info!(
-                    pid, killed,
-                    event = "cooldown_kill_target",
-                    "答题失败进入冷却，关闭暂停中的目标软件（防绕过冷却）"
+                    pid,
+                    event = "cooldown_keep_paused",
+                    "答题失败进入冷却：保持目标暂停（pause 模式不删除进程），由暂停守卫维持暂停态"
                 );
             }
         }
@@ -336,6 +387,14 @@ pub fn do_launch_target(
         }
     };
     phase_check?;
+    // v3 监控拦截答题通过 → **接管既有进程**（不新拉起）：
+    // 孩子是自己点开 B 站的，进程已在运行；此时应把它纳入纳管并开始计时，
+    // 而不是再 open 一次（那只会把已运行的实例再激活一遍）。
+    if state.gate.lock().unwrap().quiz_reason == QuizReason::Watch {
+        if try_adopt_watched_process(state, app, now_ts)? {
+            return Ok(());
+        }
+    }
     // v2.1 pause 模式续期：目标进程仍在（被暂停），原地恢复播放而非重新拉起。
     // 条件：pause 模式 + Passed{Timeup} + paused 标志 + 有纳管句柄；
     // 进程已死（中途被手动退出等）则清纳管字段，落回正常 launch 流程。
@@ -354,7 +413,9 @@ pub fn do_launch_target(
         if let Some((pid, target_id)) = resume_spec {
             if monitor::alive(pid) {
                 let key_code = state.config.monitor.pause_key_code;
-                monitor::resume_target(pid, key_code);
+                // 「弹出 + 开始播放」：按播放状态决定是否发切换键，避免反向暂停。
+                let pause_state = state.gate.lock().unwrap().pause_state;
+                monitor::resume_if_paused(pid, key_code, pause_state);
                 let round_sec = round_sec_for(state, Some(&target_id));
                 {
                     let mut gate = state.gate.lock().unwrap();
@@ -427,6 +488,86 @@ pub fn do_launch_target(
     );
     let round_sec = round_sec_for(state, Some(&target.id));
     spawn_using_monitor(app.clone(), round_sec);
+    Ok(())
+}
+
+/// v3 监控拦截答题通过 → **接管既有进程**（不重新拉起）。
+///
+/// 场景：孩子自己从 Dock 点开了 B 站 → watchdog 拦截并强制答题 → 答对后。
+/// 此时进程**已经在运行**，所以不能再 `open` 一次（那只会把已有实例再激活一遍，
+/// 播放进度也会被打断），正确做法是把**既有 PID** 纳入纳管并开始 10 分钟倒计时。
+///
+/// 返回值：
+/// - `true`  → 已处理（接管成功 或 已放弃拦截），调用方应直接结束，不再走 launch 流程；
+/// - `false` → 当前不是监控拦截场景（无 watch_pid），调用方继续正常 launch 流程。
+pub fn try_adopt_watched_process(
+    state: &AppState,
+    app: &AppHandle,
+    now_ts: i64,
+) -> Result<bool, AppError> {
+    let (watch_pid, target_id) = {
+        let gate = state.gate.lock().unwrap();
+        (gate.watch_pid, gate.selected_target_id.clone())
+    };
+    let Some(pid) = watch_pid else {
+        return Ok(false);
+    };
+    // 找不到目标规格 → 放弃拦截（孩子可能已经把它关了，或配置被改过）
+    let Some(target) = target_id
+        .as_deref()
+        .and_then(|id| state.config.target_apps.iter().find(|t| t.id == id))
+        .cloned()
+    else {
+        tracing::warn!(pid, event = "watch_abandon", "监控拦截后目标规格缺失，放弃拦截");
+        abandon_watch_intercept(state, app)?;
+        return Ok(true);
+    };
+    // 进程在答题期间已被手动关掉 → 放弃拦截，回到 Idle，不做任何 kill/启动
+    if !monitor::alive(pid) {
+        tracing::warn!(
+            pid,
+            target = %target.name,
+            event = "watch_abandon",
+            "监控拦截期间目标进程已退出，放弃拦截"
+        );
+        abandon_watch_intercept(state, app)?;
+        return Ok(true);
+    }
+    // 接管既有 PID，开始本轮计时
+    // ⚠️ `adopt_running` → `enter_using` 会把 `pause_state` 复位为 Unknown，
+    // 所以必须**先**取出「拦截时的播放状态判定」再接管。
+    let key_code = state.config.monitor.pause_key_code;
+    let pause_state = state.gate.lock().unwrap().pause_state;
+    {
+        let mut gate = state.gate.lock().unwrap();
+        gate.adopt_running(&target.id, pid, now_ts, false)?;
+        gate.save(&state.state_file())?;
+    }
+    // 「弹出 + 开始播放」：拦截时已把视频暂停，答对后恢复播放。
+    monitor::resume_if_paused(pid, key_code, pause_state);
+    tracing::info!(
+        target = %target.name,
+        pid,
+        event = "watch_adopt",
+        "已接管被监控拦截的既有进程，开始计时"
+    );
+    let _ = app.emit(
+        "gate://round-started",
+        serde_json::json!({ "target_name": target.name }),
+    );
+    let round_sec = round_sec_for(state, Some(&target.id));
+    spawn_using_monitor(app.clone(), round_sec);
+    Ok(true)
+}
+
+/// 放弃一次监控拦截：清标志 + 回 Idle + 通知前端（不杀进程、不启动进程）。
+fn abandon_watch_intercept(state: &AppState, app: &AppHandle) -> Result<(), AppError> {
+    {
+        let mut gate = state.gate.lock().unwrap();
+        gate.abandon_watch_intercept();
+        gate.save(&state.state_file())?;
+    }
+    let _ = app.emit("gate://watch-abandoned", serde_json::json!({}));
     Ok(())
 }
 
@@ -669,19 +810,42 @@ fn handle_timeout(app: &AppHandle, state: &AppState, round_sec: i64, now_ts: i64
         )
     };
     let pause_mode = state.config.monitor.timeout_action == TimeoutAction::Pause;
-    // 1) 超时动作：kill 或 pause（pause 失败回退 kill，U8 语义：窗口置顶仍保管控）
+    // 1) 超时动作：kill 或 pause（pause 失败默认不 kill，按「只暂停不删除」保留进程）
+    // `pause_state` 记录「超时那次的播放状态判定」，供答题通过后恢复播放时决定
+    // 该不该发切换键（空格是 toggle 语义，发错会把正在播放的视频反向暂停）。
+    let mut pause_state = PauseState::Unknown;
     if let Some(pid) = pid {
         if pause_mode {
             let key_code = state.config.monitor.pause_key_code;
-            let paused = monitor::pause_target(pid, key_code);
-            if !paused {
-                tracing::warn!(
-                    pid,
-                    event = "timeout_pause_fallback_kill",
-                    "暂停按键失败，回退终止目标进程（不放任继续使用）"
-                );
-                let killed = monitor::terminate(pid);
-                tracing::info!(event = "timeout_kill", pid, killed, "使用时长到点，终止目标进程");
+            // 先判定播放状态再决定按不按：视频本就暂停时再按一次会反向恢复播放。
+            pause_state = monitor::ensure_paused(pid, key_code);
+            let pause_ok = matches!(pause_state, PauseState::Paused);
+            if !pause_ok {
+                if pause_state == PauseState::Unknown {
+                    let _ = app.emit(
+                        "gate://permission-required",
+                        serde_json::json!({
+                            "message": "无法自动暂停视频：请在「系统设置 → 隐私与安全性 → 辅助功能」中勾选 AnswerGate，否则暂停/恢复播放不会生效"
+                        }),
+                    );
+                }
+                if state.config.monitor.pause_fallback_kill {
+                    tracing::warn!(
+                        pid,
+                        event = "timeout_pause_fallback_kill",
+                        "暂停按键失败，回退终止目标进程（不放任继续使用）"
+                    );
+                    let killed = monitor::terminate(pid);
+                    tracing::info!(event = "timeout_kill", pid, killed, "使用时长到点，终止目标进程");
+                } else {
+                    // v3 需求：只暂停，不能删除 —— 按键失败也保留进程，
+                    // 改由「暂停守卫」持续压制（见 spawn_paused_guard）。
+                    tracing::warn!(
+                        pid,
+                        event = "timeout_pause_failed_keep_alive",
+                        "暂停按键失败（多半缺少辅助功能权限）：按「不删除」策略保留进程，暂停守卫将持续尝试压制播放"
+                    );
+                }
             }
         } else {
             let killed = monitor::terminate(pid);
@@ -694,7 +858,8 @@ fn handle_timeout(app: &AppHandle, state: &AppState, round_sec: i64, now_ts: i64
     }
     // 3) 自动进入超时答题（复用 start_quiz 流程，QuizReason=Timeup）
     let level = level.unwrap_or(state.config.quiz.default_level);
-    let count = state.config.quiz.question_count as usize;
+    // v3：超时续期卷题量用 timeup_question_count（默认 3 题，必须全对）
+    let count = paper_count_for(state, QuizReason::Timeup);
     let exclude_fill_blank = cfg!(target_os = "android");
     let target_name = target_id
         .as_deref()
@@ -717,7 +882,7 @@ fn handle_timeout(app: &AppHandle, state: &AppState, round_sec: i64, now_ts: i64
             if pause_still_alive {
                 // pause 模式：进程存活被暂停，保留纳管字段（pid/target_id），
                 // 答题通过后 extend_and_relaunch 原地恢复播放
-                gate.begin_timeup_paused(level, target_id.clone(), now())?;
+                gate.begin_timeup_paused(level, target_id.clone(), now(), pause_state)?;
             } else {
                 // kill 模式（或 pause 回退 kill 后进程已亡）：清纳管字段
                 gate.begin_quiz_reason(level, target_id.clone(), QuizReason::Timeup, now())?;
@@ -743,17 +908,29 @@ fn handle_timeout(app: &AppHandle, state: &AppState, round_sec: i64, now_ts: i64
             }
         }
         Err(e) => {
-            // 入题失败兜底（如题库异常）：放弃本轮回 Idle，不放任目标继续使用
-            tracing::warn!(error = %e, event = "timeout_kill", result = "quiz_start_failed", "超时后进入答题失败，放弃本轮");
+            // 入题失败兜底（如题库异常）：放弃本轮回 Idle
+            tracing::warn!(error = %e, event = "timeout_quiz_start_failed", "超时后进入答题失败，放弃本轮");
             let mut gate = state.gate.lock().unwrap();
             let pid = gate.managed_pid;
+            let alive_before = pid.map(monitor::alive).unwrap_or(false);
             gate.abandon_round();
             let _ = gate.save(&state.state_file());
+            // v3 需求：pause 模式**不得**终止进程（「只暂停，不能删除」）。
+            // 入题失败时保留进程存活，由放弃本轮的语义 + 用户手动关闭处理；
+            // 仅 kill 模式才终止。
             if let Some(pid) = pid {
-                // pause 模式下进程可能仍存活：入题失败即放管，必须终止
-                monitor::terminate(pid);
+                if pause_mode {
+                    tracing::warn!(
+                        pid,
+                        event = "timeout_quiz_start_failed_keep_alive",
+                        "pause 模式：入题失败保留目标进程存活（按「不删除」策略）"
+                    );
+                } else {
+                    let killed = monitor::terminate(pid);
+                    tracing::info!(event = "timeout_kill", pid, killed, "使用时长到点，终止目标进程");
+                }
             }
-            let _ = app.emit("gate://process-exited", serde_json::json!({}));
+            let _ = app.emit("gate://process-exited", serde_json::json!({ "kept_alive": alive_before && pause_mode }));
         }
     }
 }
@@ -761,16 +938,43 @@ fn handle_timeout(app: &AppHandle, state: &AppState, round_sec: i64, now_ts: i64
 // ---------- v2.1 暂停守卫（pause 模式防跳过） ----------
 
 /// 暂停守卫单步判定（纯逻辑，供守卫线程与测试复用）。
-/// 仅当「仍在暂停答题（Quiz{Timeup} 且 paused）且纳管字段还在」时需要重新暂停。
+///
+/// 仅当「目标仍处于暂停态且纳管/拦截字段还在」时需要维持暂停。
+/// 覆盖两种场景：
+/// - `Quiz`：超时答题进行中（pause 模式，进程存活）；
+/// - `Cooldown`：答题失败进入冷却，进程仍存活且应保持暂停（v3：只暂停不删除）。
+///
+/// v3 追加：**监控拦截**场景（孩子自己点开 B 站被 watchdog 拦截）——
+/// 拦截时已把视频暂停，答题/冷却期间同样需要维持暂停，
+/// 此时进程记在 `watch_pid`（尚未纳管，`managed_pid` 为空）。
 pub fn paused_guard_step(gate: &GateState, pid: i32) -> bool {
-    gate.phase == GatePhase::Quiz && gate.paused && gate.managed_pid == Some(pid)
+    // 场景 A：已被纳管的目标（超时暂停）
+    if gate.managed_pid == Some(pid) {
+        return match gate.phase {
+            GatePhase::Quiz | GatePhase::Cooldown => gate.paused,
+            _ => false,
+        };
+    }
+    // 场景 B：被 watchdog 拦截的既有进程（尚未纳管）
+    if gate.watch_pid == Some(pid) && gate.watch_intercepted {
+        return matches!(
+            gate.phase,
+            GatePhase::Quiz | GatePhase::Failed | GatePhase::Cooldown
+        );
+    }
+    false
 }
 
-/// 暂停守卫线程：答题未完成期间每 [`PAUSE_GUARD_INTERVAL_SEC`] 秒对目标进程
-/// 重新发送暂停键，并把 AnswerGate 窗口拉回前台——堵住「切回去手动点播放」的绕过路径。
+/// 暂停守卫线程：答题未完成期间每 [`PAUSE_GUARD_INTERVAL_SEC`] 秒检查目标进程
+/// 是否仍在播放——**仅在确实还在播放时**补发一次暂停键，并把 AnswerGate 窗口拉回前台，
+/// 堵住「切回去手动点播放」的绕过路径。
 ///
-/// 退出条件（任一）：相位离开 Quiz{Timeup} 暂停态（答对续期/失败进冷却/提前结束）、
-/// 目标进程已死、monitor_stop 置位、应用退出。
+/// ⚠️ v3 修正：空格是「切换」键，若视频本就暂停再发一次会**反向恢复播放**。
+/// 故守卫必须先经 [`monitor::is_playing`] 判定播放状态再决定是否发送；
+/// 探测不可用时**宁可不发**（不能反向恢复播放）。
+///
+/// 退出条件（任一）：相位离开 Quiz/Cooldown 暂停态、目标进程已死、
+/// monitor_stop 置位、应用退出。
 pub fn spawn_paused_guard(app: AppHandle, pid: i32, key_code: u16) {
     let stop_flag = app.state::<AppState>().monitor_stop.clone();
     std::thread::spawn(move || loop {
@@ -791,16 +995,190 @@ pub fn spawn_paused_guard(app: AppHandle, pid: i32, key_code: u16) {
             tracing::warn!(pid, event = "pause_guard_stopped", "目标进程已死，守卫退出");
             break;
         }
-        let repaused = monitor::pause_target(pid, key_code);
+        let repaused = monitor::repause_if_playing(pid, key_code);
         if let Some(window) = app.get_webview_window("main") {
             let _ = window.set_focus();
         }
-        tracing::info!(pid, repaused, event = "pause_guard_tick", "守卫重新暂停目标软件");
+        tracing::info!(pid, repaused, event = "pause_guard_tick", "守卫检查目标播放状态并维持暂停");
     });
 }
 
 /// 暂停守卫重发间隔（秒）。
 const PAUSE_GUARD_INTERVAL_SEC: u64 = 5;
+
+// ---------- v3 独立进程监控（watchdog） ----------
+
+/// watchdog 单步判定（纯逻辑，供测试复用）。
+///
+/// 输入：当前门禁相位 + 该目标当前是否在运行 + 本程序是否已纳管它。
+/// 输出：是否需要拦截。
+///
+/// 拦截条件（全部满足）：
+/// - 目标进程在运行；
+/// - 本程序当前**没有**纳管它（`managed_target_id != Some(id)`）——
+///   即它是「绕过本程序」启动的；
+/// - 门禁处于 `Idle`（不在答题/纳管/冷却中，避免与既有流程抢状态）。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WatchDecision {
+    /// 无需干预。
+    None,
+    /// 拦截：要求答题（先答题后计时）。
+    Intercept,
+}
+
+/// 判定是否需要拦截某个绕过启动的目标进程。
+pub fn watch_decision(
+    gate: &GateState,
+    target_id: &str,
+    managed_target_id: Option<&str>,
+    target_running: bool,
+) -> WatchDecision {
+    if !target_running {
+        return WatchDecision::None;
+    }
+    // 本程序已纳管该目标 → 由既有 using monitor 负责计时，不重复拦截
+    if managed_target_id == Some(target_id) {
+        return WatchDecision::None;
+    }
+    // 仅在空闲态拦截：答题中/纳管中/冷却中都不抢状态
+    if gate.phase != GatePhase::Idle {
+        return WatchDecision::None;
+    }
+    // 已拦截过一次且尚未完成 → 不重复触发
+    if gate.watch_intercepted {
+        return WatchDecision::None;
+    }
+    WatchDecision::Intercept
+}
+
+/// 独立进程监控线程（v3）：周期性探测白名单目标是否在运行，
+/// 一旦发现「不是本程序拉起的」实例，立即抢前台 + 弹答题页要求校验。
+///
+/// 这是「绕过门禁直接点开 B 站」的封堵点——没有它，孩子完全可以
+/// 自己打开软件无限看下去，AnswerGate 完全无感知。
+pub fn spawn_watchdog(app: AppHandle) {
+    std::thread::spawn(move || loop {
+        let interval = {
+            let state = app.state::<AppState>();
+            state.config.monitor.watch_interval_sec.max(1)
+        };
+        std::thread::sleep(Duration::from_secs(interval));
+        if !app.state::<AppState>().config.monitor.watch_enabled {
+            continue;
+        }
+        watchdog_step(&app);
+    });
+}
+
+/// watchdog 单步：扫描所有启用监控的目标，命中则拦截。
+pub fn watchdog_step(app: &AppHandle) {
+    let state = app.state::<AppState>();
+    let targets: Vec<TargetApp> = state
+        .config
+        .target_apps
+        .iter()
+        .filter(|t| t.watch)
+        .cloned()
+        .collect();
+    for target in targets {
+        // 探测该目标当前是否有实例在运行（跨平台）
+        let running_pid = match unlock::probe_running_pid(&target) {
+            Some(pid) => pid,
+            None => continue,
+        };
+        // 已被本程序纳管 → 跳过（由 using monitor 计时）
+        let managed_target_id = state.gate.lock().unwrap().managed_target_id.clone();
+        let decision = {
+            let gate = state.gate.lock().unwrap();
+            watch_decision(
+                &gate,
+                &target.id,
+                managed_target_id.as_deref(),
+                true,
+            )
+        };
+        if decision != WatchDecision::Intercept {
+            continue;
+        }
+        tracing::info!(
+            target = %target.name,
+            pid = running_pid,
+            event = "watch_detected",
+            "检测到目标软件被绕过本程序启动，拦截并要求答题"
+        );
+        if let Err(e) = trigger_watch_intercept(app, &state, &target, running_pid) {
+            tracing::warn!(error = %e, event = "watch_intercept_failed", "独立监控拦截失败");
+        }
+    }
+}
+
+/// 触发 watchdog 拦截：抢前台 + 自动开卷（Quiz{Watch}）。
+///
+/// 按 `watch_mode` 分流：
+/// - `Quiz`（默认）：进入答题页，答对后**接管既有进程**开始计时；
+/// - `Adopt`：直接接管既有进程开始计时（不打断）。
+fn trigger_watch_intercept(
+    app: &AppHandle,
+    state: &AppState,
+    target: &TargetApp,
+    pid: i32,
+) -> Result<(), AppError> {
+    let now_ts = now();
+    let level = state.config.quiz.default_level;
+
+    if state.config.monitor.watch_mode == WatchMode::Adopt {
+        // 直接接管：纳管既有进程并开始本轮计时
+        {
+            let mut gate = state.gate.lock().unwrap();
+            gate.adopt_running(&target.id, pid, now_ts, true)?;
+            gate.save(&state.state_file())?;
+        }
+        let round_sec = round_sec_for(state, Some(&target.id));
+        let _ = app.emit(
+            "gate://round-started",
+            serde_json::json!({ "target_name": target.name }),
+        );
+        spawn_using_monitor(app.clone(), round_sec);
+        return Ok(());
+    }
+
+    // Quiz 模式：进入答题页
+    // v3：监控拦截同样走严格档（3 题全对），与超时续期一致
+    let count = paper_count_for(state, QuizReason::Watch);
+    let exclude_fill_blank = cfg!(target_os = "android");
+    let paper = quiz::make_paper(&state.bank, level, count, exclude_fill_blank)?;
+    // v3 需求「答对才能继续看」：拦截的同时**立即暂停**视频（只暂停不删除），
+    // 孩子切回去点播放会被暂停守卫再次压制。
+    let key_code = state.config.monitor.pause_key_code;
+    let pause_state = monitor::ensure_paused(pid, key_code);
+    // 按键发送失败（多为缺「辅助功能」权限）时 ensure_paused 返回 Unknown——
+    // 此时视频其实没被暂停，必须让前端明确告知家长，不能静默放行。
+    if pause_state == PauseState::Unknown {
+        let _ = app.emit(
+            "gate://permission-required",
+            serde_json::json!({
+                "message": "无法自动暂停视频：请在「系统设置 → 隐私与安全性 → 辅助功能」中勾选 AnswerGate，否则暂停/恢复播放不会生效"
+            }),
+        );
+    }
+    {
+        let mut gate = state.gate.lock().unwrap();
+        gate.begin_watch_intercept(level, Some(target.id.clone()), pid, now_ts, pause_state)?;
+        gate.set_active_paper(paper.clone());
+        gate.save(&state.state_file())?;
+    }
+    // 暂停守卫：答题期间孩子切回 B 站点播放时重新压制
+    spawn_paused_guard(app.clone(), pid, key_code);
+    // 抢前台：让孩子看到「该答题了」
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.set_focus();
+    }
+    let _ = app.emit(
+        "gate://watch-intercepted",
+        serde_json::json!({ "target_name": target.name }),
+    );
+    Ok(())
+}
 
 // ---------- Tauri command 薄封装 ----------
 /// 获取规则摘要（题量/及格线/重试/冷却 + 学段列表）。

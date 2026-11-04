@@ -13,6 +13,8 @@
     launch,
     extendAndRelaunch,
     cameFromTimeout,
+    cameFromWatch,
+    quizReason,
     retry,
     gotoCooldown,
     backToLevel,
@@ -25,9 +27,16 @@
   let shakeTrigger = 0;
 
   $: r = $result;
-  $: passLine = $rules ? Math.round($rules.pass_score * 100) : 80;
+  // v3：门槛随答题原因变化——超时续期 / 监控拦截都是「3 题全对」
+  $: isStrict = $quizReason === "timeup" || $quizReason === "watch";
+  $: passLine = isStrict
+    ? Math.round(($rules?.timeup_pass_score ?? 1) * 100)
+    : $rules
+      ? Math.round($rules.pass_score * 100)
+      : 80;
   $: needCooldown = r !== null && !r.passed && r.remaining_retry === 0;
   $: isTimeupPass = r !== null && r.passed && $cameFromTimeout;
+  $: isWatchPass = r !== null && r.passed && $cameFromWatch;
 
   function startCountdown(): void {
     countdown = 3;
@@ -78,6 +87,26 @@
       {:else}
         <div class="actions">
           <BigButton kind="success" label="▶ 继续使用" on:click={extendAndRelaunch} />
+        </div>
+      {/if}
+    {:else if isWatchPass}
+      <!-- v3：监控拦截答题通过 → 接管既有进程，弹出 B 站窗口并恢复播放 -->
+      <h1>答对啦！</h1>
+      <p class="tip">已接管目标软件，视频将自动弹出并继续播放…</p>
+      {#if $launchError}
+        <p class="error">接管失败：{$launchError}</p>
+        <div class="actions">
+          <BigButton kind="primary" label="重试接管" on:click={launch} />
+          <BigButton kind="neutral" label="返回首页" on:click={backToLevel} />
+        </div>
+      {:else if $launched}
+        <p class="tip">正在进入使用计时…</p>
+      {:else}
+        <p class="tip">
+          即将打开目标软件，<span class="count">{countdown}</span> 秒
+        </p>
+        <div class="actions">
+          <BigButton kind="neutral" label="返回首页" on:click={backToLevel} />
         </div>
       {/if}
     {:else if $launched}

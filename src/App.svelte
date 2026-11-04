@@ -16,6 +16,9 @@
     handleProcessExited,
     handleMonitorStopped,
     handleRoundStarted,
+    handleWatchIntercepted,
+    handleWatchAbandoned,
+    permissionWarning,
     gotoCooldown,
   } from "./lib/gateStore";
   import LevelSelectPage from "./pages/LevelSelectPage.svelte";
@@ -50,6 +53,14 @@
         await api.onAutoLaunchFailed((msg) => exitNotice.set(`自动启动失败：${msg}`)),
       );
       unlisteners.push(await api.onCooldownFinished(() => void gotoCooldown()));
+      // v3 独立监控拦截通道：检测到绕过门禁启动的目标 → 抢答
+      unlisteners.push(
+        await api.onWatchIntercepted((name) => void handleWatchIntercepted(name)),
+      );
+      unlisteners.push(await api.onWatchAbandoned(() => handleWatchAbandoned()));
+      unlisteners.push(
+        await api.onPermissionRequired((msg) => permissionWarning.set(msg)),
+      );
     } catch (e) {
       void api.frontendLog("warn", `附加事件订阅失败: ${String(e)}`);
     }
@@ -67,6 +78,10 @@
     noticeTimer = setTimeout(() => exitNotice.set(null), 3000);
   }
 </script>
+
+{#if $permissionWarning}
+  <div class="permission-bar" role="alert">⚠️ {$permissionWarning}</div>
+{/if}
 
 {#if $bootError}
   <main class="boot-error">
@@ -109,6 +124,23 @@
     height: 100vh;
     font-size: var(--ag-font-body);
     color: var(--ag-danger);
+  }
+
+  /* 系统权限告警（v3：辅助功能未授权时常驻顶部，不能自动消失） */
+  .permission-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: var(--ag-warning);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.5;
+    text-align: center;
+    padding: 8px 16px;
+    box-shadow: 0 2px 8px rgba(31, 36, 48, 0.18);
   }
 
   /* 底部提示条（进程退出/提前结束通知） */

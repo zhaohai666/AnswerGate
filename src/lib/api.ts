@@ -161,6 +161,35 @@ export const api = {
       cb(event.payload.message);
     });
   },
+
+  /**
+   * 订阅独立监控拦截（v3）：检测到目标软件被绕过本程序启动，
+   * 后端已抢前台 + 暂停视频 + 自动开卷，前端据此进答题页。
+   */
+  async onWatchIntercepted(
+    cb: (targetName: string) => void,
+  ): Promise<UnlistenFn> {
+    return listen<{ target_name: string }>("gate://watch-intercepted", (event) => {
+      cb(event.payload.target_name);
+    });
+  },
+
+  /** 订阅监控拦截被放弃（v3：目标进程已退出 / 配置变更，拦截作废） */
+  async onWatchAbandoned(cb: () => void): Promise<UnlistenFn> {
+    return listen("gate://watch-abandoned", () => {
+      cb();
+    });
+  },
+
+  /**
+   * 订阅系统权限告警（v3）：模拟暂停键发送失败时后端推送，
+   * 多数情况是 macOS 未授予「辅助功能」权限，需要家长手动勾选。
+   */
+  async onPermissionRequired(cb: (message: string) => void): Promise<UnlistenFn> {
+    return listen<{ message: string }>("gate://permission-required", (event) => {
+      cb(event.payload.message);
+    });
+  },
 };
 
 /** 将 invoke 抛出的 AppError({code,message,data}) 转为可展示文本 */

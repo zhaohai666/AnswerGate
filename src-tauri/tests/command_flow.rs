@@ -98,11 +98,12 @@ fn right_answers(state: &AppState) -> Vec<Answer> {
 #[test]
 fn command_flow_fail_retry_cooldown_full_path() {
     let (_d, st) = fixture_state();
-    // 规则摘要与目标列表（默认模板含 1 个演示目标）
+    // 规则摘要与目标列表（默认模板含演示目标 + 哔哩哔哩目标）
     assert_eq!(commands::rules_summary(&st).question_count, 5);
     let targets = commands::list_target_views(&st);
-    assert_eq!(targets.len(), 1);
+    assert_eq!(targets.len(), 2);
     assert_eq!(targets[0].id, "demo-notes");
+    assert_eq!(targets[1].id, "bilibili");
 
     // ① start_quiz：返回剥离答案的试卷视图
     let view = commands::do_start_quiz(&st, Level::Primary, None, NOW).unwrap();

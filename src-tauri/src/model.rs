@@ -223,6 +223,10 @@ pub struct TargetApp {
     /// 每日累计上限（分钟，v2 P1 留位不启用，Q2）。
     #[serde(default)]
     pub daily_limit_minutes: Option<f64>,
+    /// 是否启用「独立进程监控」（v3）：即使目标不是本程序拉起的，只要检测到
+    /// 它在运行就纳入管控（先答题后计时）。默认开启。
+    #[serde(default = "default_true")]
+    pub watch: bool,
 }
 
 fn default_use_minutes() -> f64 {
@@ -293,6 +297,25 @@ pub enum TimeoutAction {
     Pause,
 }
 
+/// 目标播放状态（v3）：空格键是「切换」语义，必须先知道当前是播是停，
+/// 才能安全地决定「要不要按这一下」。
+///
+/// - `Paused`：确认处于暂停态（此刻按下 = 恢复播放）；
+/// - `Playing`：确认正在播放（此刻按下 = 暂停）；
+/// - `Unknown`：探测不可用（如沙箱受限 / Android 无法探测其他应用），
+///   调用方应保守处理。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum PauseState {
+    /// 确认已暂停。
+    Paused,
+    /// 确认正在播放。
+    Playing,
+    /// 状态未知（探测不可用）。
+    #[default]
+    Unknown,
+}
+
 /// [monitor] 段配置（v2：使用时长管控全局参数）。
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct MonitorConfig {
@@ -312,6 +335,39 @@ pub struct MonitorConfig {
     /// Windows 固定发送媒体播放/暂停键（VK_MEDIA_PLAY_PAUSE），忽略此值。
     #[serde(default = "default_pause_key_code")]
     pub pause_key_code: u16,
+    /// 是否启用独立进程监控（v3）：目标被绕过本程序启动时也能被发现。
+    #[serde(default = "default_true")]
+    pub watch_enabled: bool,
+    /// 独立监控的轮询间隔（秒，v3）。最小 1 秒。
+    #[serde(default = "default_watch_interval_sec")]
+    pub watch_interval_sec: u64,
+    /// 独立监控命中时的处理方式（v3）。
+    #[serde(default)]
+    pub watch_mode: WatchMode,
+    /// 超时续期答题的题量（v3）：默认 3 题。
+    #[serde(default = "default_timeup_question_count")]
+    pub timeup_question_count: u32,
+    /// 超时续期答题的及格线（v3）：默认 1.0 = 必须全对才放行。
+    #[serde(default = "default_timeup_pass_score")]
+    pub timeup_pass_score: f32,
+    /// pause 模式模拟按键失败时是否回退为终止进程（v3）。
+    /// 默认 false —— 需求明确要求「只暂停，不能删除」。
+    #[serde(default)]
+    pub pause_fallback_kill: bool,
+}
+
+/// 独立进程监控模式（v3）：检测到目标软件「不是本程序拉起的」却在运行时如何处理。
+///
+/// - `Quiz`（默认）：立即要求答题，通过后才接管该进程并开始本轮计时；
+/// - `Adopt`：直接接管该进程开始计时（不打断当前使用）。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum WatchMode {
+    /// 先答题后计时（默认，堵死「绕开门禁白嫖时长」）。
+    #[default]
+    Quiz,
+    /// 直接接管计时（不打断当前使用）。
+    Adopt,
 }
 
 fn default_min_use_minutes() -> f64 {
@@ -319,6 +375,18 @@ fn default_min_use_minutes() -> f64 {
 }
 fn default_pause_key_code() -> u16 {
     49
+}
+
+fn default_watch_interval_sec() -> u64 {
+    3
+}
+
+fn default_timeup_question_count() -> u32 {
+    3
+}
+
+fn default_timeup_pass_score() -> f32 {
+    1.0
 }
 
 impl Default for MonitorConfig {
@@ -329,6 +397,12 @@ impl Default for MonitorConfig {
             max_rounds: 0,
             timeout_action: TimeoutAction::Kill,
             pause_key_code: default_pause_key_code(),
+            watch_enabled: true,
+            watch_interval_sec: default_watch_interval_sec(),
+            watch_mode: WatchMode::Quiz,
+            timeup_question_count: default_timeup_question_count(),
+            timeup_pass_score: default_timeup_pass_score(),
+            pause_fallback_kill: false,
         }
     }
 }

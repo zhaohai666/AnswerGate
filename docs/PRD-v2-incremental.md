@@ -5,6 +5,7 @@
 - **Project Name**: `answergate`
 - **文档版本**: v2.0-incremental（仅描述 v1 之上的变更，未提及部分沿用 v1）
 - **前置文档**: `docs/PRD.md`（v1）、`README.md`（v1 技术方案）
+- **后继文档**: `docs/PRD-v3-incremental.md`（v3：独立进程监控 + 强制答题 + 只暂停不删除）
 
 ---
 
@@ -70,6 +71,9 @@
 - **能管**：AnswerGate 自己拉起的目标软件进程 —— 可计时、可 kill、可续期拉起。
 - **不能管**：孩子绕开 AnswerGate 手动打开的目标软件 —— 无法检测计时、无法拦截（桌面端无系统级 HOOK；Android 端甚至无法 kill 其他应用，见 Q3 降级方案）。
 - 说法统一为：*"AnswerGate 是回合制使用教练，不是系统级防火墙"*；强管控仍建议配合系统家长控制（README 13.5）。
+
+> 📌 **该边界已被 v3 推翻（桌面端）**：v3 新增独立进程监控（watchdog），能发现并拦截「绕开门禁手动打开」的白名单目标（见 `docs/PRD-v3-incremental.md`）。
+> 同时 v3 把 pause 模式改为「只暂停、不删除」，超时续期卷改为 3 题全对。
 
 ---
 

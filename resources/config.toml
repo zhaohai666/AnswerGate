@@ -22,6 +22,23 @@ win = "C:\\Windows\\System32\\notepad.exe"
 # android = "com.example.notes"
 # 单轮使用时长（分钟，支持小数；最小 0.1）
 use_minutes = 10
+# 是否启用独立进程监控（v3）：即使不是本程序拉起的，只要检测到它在运行就纳入管控。
+# 孩子从 Dock 直接点开 B 站也会被发现 → 立即要求答题，答对后才接管并开始计时。
+# 演示目标默认关闭（否则记事本一开就被拦），真实目标建议开启。
+watch = false
+
+# 哔哩哔哩（v3 目标示例：10 分钟强制答题 + 只暂停不删除）
+[[target_apps]]
+id = "bilibili"
+name = "哔哩哔哩"
+# macOS 官方客户端默认安装名（本机实测）；若安装在别处请改成实际路径
+mac = "/Applications/哔哩哔哩.app"
+win = "C:\\Program Files\\bilibili\\bilibili.exe"
+# android = "tv.danmaku.bili"
+# 单轮使用时长（分钟）—— 超过 10 分钟强制答题
+use_minutes = 10
+# 独立进程监控：孩子自己点开也会被发现
+watch = true
 
 # 使用时长管控（v2）
 [monitor]
@@ -35,10 +52,28 @@ max_rounds = 0
 #   kill  = 关闭目标程序（默认，强管控）
 #   pause = 不退出程序，模拟按键暂停（如 Bilibili 空格暂停），答题通过后自动恢复播放
 #           注意：pause 需要在 系统设置 → 隐私与安全性 → 辅助功能 中勾选 AnswerGate；
-#           按键发送失败时自动回退为 kill
+#           v3 起按键失败也**不会**终止进程（按「只暂停，不能删除」要求），由暂停守卫持续压制。
 timeout_action = "pause"
 # pause 模式模拟按键的虚拟键码（macOS）：默认 49 = 空格；Windows 固定发媒体播放/暂停键，忽略此值
 pause_key_code = 49
+# pause 模式按键失败时是否回退为终止进程（v3）。默认 false —— 需求要求「只暂停，不能删除」。
+pause_fallback_kill = false
+
+# ---- 独立进程监控（v3）：堵死「绕过门禁直接打开目标软件」的路径 ----
+# 是否启用独立进程监控
+watch_enabled = true
+# 轮询间隔（秒，最小 1）
+watch_interval_sec = 3
+# 命中时的处理方式：
+#   quiz = 先要求答题，通过后才接管该进程并开始计时（默认）
+#   adopt= 直接接管计时，不打断当前使用
+watch_mode = "quiz"
+
+# ---- 超时续期 / 监控拦截的答题门槛（v3）----
+# 续期卷题量：3 题
+timeup_question_count = 3
+# 续期卷及格线：1.0 = 必须全对才放行
+timeup_pass_score = 1.0
 
 # [log]
 # enable = true

@@ -41,6 +41,24 @@ fn sanitize(cfg: &mut AppConfig) {
         tracing::warn!("config.monitor.pause_key_code 为 0，回退默认值 49（空格）");
         cfg.monitor.pause_key_code = 49;
     }
+    // [monitor]：watch_interval_sec 为 0 回退 3 秒（0 会导致忙轮询打满 CPU）
+    if cfg.monitor.watch_interval_sec == 0 {
+        tracing::warn!("config.monitor.watch_interval_sec 为 0，回退默认值 3 秒");
+        cfg.monitor.watch_interval_sec = 3;
+    }
+    // [monitor]：timeup_question_count 为 0 回退 3 题（0 题 = 无人可答，等于永久卡死）
+    if cfg.monitor.timeup_question_count == 0 {
+        tracing::warn!("config.monitor.timeup_question_count 为 0，回退默认值 3");
+        cfg.monitor.timeup_question_count = 3;
+    }
+    // [monitor]：timeup_pass_score 抬回 1.0（续期/拦截卷必须全对，需求明确，不可放宽）
+    // 家长误把门槛改成 0.2 也无效——「3 题全对」是硬性要求。
+    if cfg.monitor.timeup_pass_score < 1.0 {
+        tracing::warn!(
+            "config.monitor.timeup_pass_score 小于 1.0，抬回 1.0（续期必须全对）"
+        );
+        cfg.monitor.timeup_pass_score = 1.0;
+    }
     // [[target_apps]]：use_minutes 低于下限/非法 → 回退下限并告警（架构 #4：最小 0.1）
     let min = cfg.monitor.min_use_minutes;
     for t in &mut cfg.target_apps {

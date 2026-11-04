@@ -133,6 +133,85 @@ pub fn launch_macos_managed(app_path: &str) -> Result<Option<i32>, AppError> {
     Ok(pid_of_app(app_path))
 }
 
+/// 探测目标软件当前是否在运行（v3 独立进程监控用）。
+///
+/// 与 `pid_of_app` 的区别：**单次快速探测**，不做 12s 重试窗口、不做 500ms 稳定性复核——
+/// watchdog 每隔数秒轮询一次，必须是低开销的「在不在」判断，而非「刚启动时的句柄获取」。
+///
+/// - macOS：精确 pgrep 主二进制路径 + 主进程校验（排除 Helper）；
+/// - Windows：tasklist 按 exe 名过滤；
+/// - Android：无法探测其他应用，恒返回 `None`（系统限制，见 PRD 边界）。
+pub fn probe_running_pid(target: &TargetApp) -> Option<i32> {
+    let spec = target.launch_spec()?;
+    platform_probe_running_pid(spec)
+}
+
+#[cfg(target_os = "macos")]
+fn platform_probe_running_pid(spec: &str) -> Option<i32> {
+    let exec_name = bundle_executable_name(spec)?;
+    let main_bin = format!("{}/Contents/MacOS/{}", spec, exec_name);
+    // 精确 pgrep：命中即为主进程路径，天然排除 Helper 子进程
+    let pid = pgrep_exact(&main_bin)?;
+    match is_main_app_process(pid, spec) {
+        Some(true) => Some(pid),
+        Some(false) => {
+            // 确认不是主进程：主进程刚退出、Helper 尚存 → 宽匹配兜底
+            pgrep_broad_then_validate(spec)
+        }
+        None => {
+            // 探测不可用（`ps` 被系统策略禁用）——精确路径本身已唯一标识主进程
+            // （Helper 在 Contents/Frameworks/ 下，不含 Contents/MacOS/），故信任命中。
+            tracing::debug!(
+                pid,
+                target = %spec,
+                event = "watch",
+                result = "pid_probe_unverified",
+                "主进程校验不可用（ps 受限），采信精确路径命中"
+            );
+            Some(pid)
+        }
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn platform_probe_running_pid(spec: &str) -> Option<i32> {
+    // Windows 按 exe 文件名过滤 tasklist
+    let exe_name = std::path::Path::new(spec)
+        .file_name()
+        .map(|s| s.to_string_lossy().to_string())?;
+    let filter = format!("IMAGENAME eq {}", exe_name);
+    let out = std::process::Command::new("tasklist")
+        .args(["/FI", &filter, "/NH", "/FO", "CSV"])
+        .output()
+        .ok()?;
+    if !out.status.success() {
+        return None;
+    }
+    // CSV 行格式："name.exe","pid","session","session#","mem"
+    String::from_utf8_lossy(&out.stdout)
+        .lines()
+        .filter_map(|line| {
+            let mut parts = line.split(',');
+            let name = parts.next()?.trim().trim_matches('"');
+            if !name.eq_ignore_ascii_case(&exe_name) {
+                return None;
+            }
+            parts.next()?.trim().trim_matches('"').parse::<i32>().ok()
+        })
+        .next()
+}
+
+#[cfg(target_os = "android")]
+fn platform_probe_running_pid(_spec: &str) -> Option<i32> {
+    // Android 沙箱限制：普通应用无法枚举其他应用的进程（系统限制，见 PRD Q3）。
+    None
+}
+
+#[cfg(not(any(target_os = "macos", target_os = "windows", target_os = "android")))]
+fn platform_probe_running_pid(_spec: &str) -> Option<i32> {
+    None
+}
+
 /// macOS：按 app 路径探测运行中主进程的 PID（v2 加固）。
 ///
 /// 多策略冗余（任一命中即返回），每条策略命中后都做"存活 + 500ms 稳定性复核"
@@ -230,7 +309,7 @@ fn pgrep_broad_then_validate(app_path: &str) -> Option<i32> {
     String::from_utf8_lossy(&out.stdout)
         .lines()
         .filter_map(|line| line.trim().parse::<i32>().ok())
-        .find(|pid| is_main_app_process(*pid, app_path))
+        .find(|pid| is_main_app_process(*pid, app_path).unwrap_or(false))
 }
 
 /// 精确 pgrep：匹配主二进制完整路径（正则转义后），天然排除 Helper 子进程。
@@ -296,25 +375,84 @@ const PROBE_ATTEMPTS: usize = 60;
 
 /// 校验 pid 是否为 app 的主进程：命令行必须是
 /// `<app_path>/Contents/MacOS/<可执行名>` 且不含 "Helper"。
+///
+/// ⚠️ 返回三态（`Option<bool>`）：
+/// - `Some(true)`  = 确认是主进程；
+/// - `Some(false)` = 确认不是主进程（Helper 等）；
+/// - `None`       = **无法判定**（`ps` 被系统策略禁用，真机实测遇到过）。
+///
+/// 无法判定时调用方应保守处理：精确 pgrep 命中 `<app>/Contents/MacOS/<exe>`
+/// 这一完整路径本身已唯一标识主进程（Helper 位于 `Contents/Frameworks/` 下），
+/// 故可采信该命中。
 #[cfg(target_os = "macos")]
-fn is_main_app_process(pid: i32, app_path: &str) -> bool {
-    let out = match std::process::Command::new("ps")
-        .args(["-p", &pid.to_string(), "-o", "command="])
-        .output()
-    {
-        Ok(o) if o.status.success() => o,
-        _ => return false,
-    };
-    let cmdline = String::from_utf8_lossy(&out.stdout).trim().to_string();
-    let expected_suffix = format!("Contents/MacOS/");
+fn is_main_app_process(pid: i32, app_path: &str) -> Option<bool> {
+    // ① 标准路径：ps 取命令行
+    if let Some(cmdline) = process_cmdline_via_ps(pid) {
+        return Some(check_main_cmdline(&cmdline, app_path));
+    }
+    // ② 降级路径：ps 被禁用 → 用 `pgrep -fl` 拿该 app 下所有进程的完整 argv
+    let listed = pgrep_list_with_args(&regex_escape(app_path))?;
+    listed
+        .iter()
+        .find(|(p, _)| *p == pid)
+        .map(|(_, cmd)| check_main_cmdline(cmd, app_path))
+}
+
+/// 命令行是否满足「主进程」特征。
+#[cfg(target_os = "macos")]
+fn check_main_cmdline(cmdline: &str, app_path: &str) -> bool {
     let is_main = cmdline.starts_with(app_path)
-        && cmdline.contains(&expected_suffix)
+        && cmdline.contains("Contents/MacOS/")
         && !cmdline.contains("Helper")
         && !cmdline.contains("helper");
     if !is_main {
-        tracing::debug!(pid, cmdline = %cmdline, "pgrep 候选非主进程，跳过");
+        tracing::debug!(cmdline = %cmdline, "pgrep 候选非主进程，跳过");
     }
     is_main
+}
+
+/// 用 `ps -p <pid> -o command=` 取进程完整命令行；`ps` 不可用时返回 None。
+#[cfg(target_os = "macos")]
+fn process_cmdline_via_ps(pid: i32) -> Option<String> {
+    let out = std::process::Command::new("ps")
+        .args(["-p", &pid.to_string(), "-o", "command="])
+        .output()
+        .ok()?;
+    if !out.status.success() {
+        return None;
+    }
+    let s = String::from_utf8_lossy(&out.stdout).trim().to_string();
+    if s.is_empty() {
+        None
+    } else {
+        Some(s)
+    }
+}
+
+/// 用 `pgrep -fl <pattern>` 列出匹配进程的 `(pid, 完整 argv)`。
+///
+/// `ps`/`top` 被系统策略禁用时，`pgrep` 仍是唯一可用的进程枚举工具
+/// （macOS 自带，不走 shell 权限检查路径）。
+#[cfg(target_os = "macos")]
+fn pgrep_list_with_args(pattern: &str) -> Option<Vec<(i32, String)>> {
+    let out = std::process::Command::new("pgrep")
+        .args(["-fl", pattern])
+        .output()
+        .ok()?;
+    if !out.status.success() {
+        // pgrep 无匹配时退出码为 1 —— 这不是错误，只是没有命中
+        return Some(Vec::new());
+    }
+    Some(
+        String::from_utf8_lossy(&out.stdout)
+            .lines()
+            .filter_map(|line| {
+                let line = line.trim();
+                let (pid, rest) = line.split_once(' ')?;
+                Some((pid.trim().parse::<i32>().ok()?, rest.trim().to_string()))
+            })
+            .collect(),
+    )
 }
 
 /// Windows：spawn exe（路径转义由 Command 参数传递天然处理）。

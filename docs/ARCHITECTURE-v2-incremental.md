@@ -3,6 +3,7 @@
 - **架构师**: 高见远（Bob / Gao）
 - **输入**: `docs/PRD-v2-incremental.md`（P0-12~P0-19、Q1~Q5 默认决策）、`docs/ARCHITECTURE.md`（v1）、v1 已实现代码
 - **版本**: v2.0-incremental（仅描述 v1 之上的变更，未提及部分沿用 v1 架构与共享知识）
+- **后继文档**: `docs/ARCHITECTURE-v3-incremental.md`（v3：watchdog 独立进程监控 + `PauseState` + 只暂停不删除）
 - **基线事实（已核对源码）**: v1 共 8 个 command、`GatePhase{Idle,Quiz,Grading,Passed,Failed,Cooldown}`、状态文件 `.answergate_gate_state.json`、macOS `open -a` 启动后 `app.exit(0)`、cooldown ticker 为 std::thread 每秒 emit
 
 ---

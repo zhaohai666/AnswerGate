@@ -6,7 +6,7 @@
 //! 3. 进程层（真实子进程）：pause_target 不杀进程；terminate 仍能真实杀死。
 
 use answergate_lib::gate::{GatePhase, GateState, QuizReason};
-use answergate_lib::model::{Level, TimeoutAction};
+use answergate_lib::model::{Level, PauseState, TimeoutAction};
 use answergate_lib::monitor;
 
 use std::process::Command;
@@ -68,11 +68,12 @@ fn pause_flow_keeps_managed_fields_and_resumes_in_place() {
     assert!(!gate.paused);
 
     // 使用中到点：进入暂停答题（与 kill 模式的关键差异——纳管字段保留）
-    gate.begin_timeup_paused(Level::Primary, Some("bili".into()), 1300)
+    gate.begin_timeup_paused(Level::Primary, Some("bili".into()), 1300, PauseState::Paused)
         .unwrap();
     assert_eq!(gate.phase, GatePhase::Quiz);
     assert_eq!(gate.quiz_reason, QuizReason::Timeup);
     assert!(gate.paused);
+    assert_eq!(gate.pause_state, PauseState::Paused);
     assert_eq!(gate.managed_pid, Some(52050), "pause 模式必须保留纳管 pid");
     assert_eq!(gate.managed_target_id.as_deref(), Some("bili"));
 
@@ -96,12 +97,17 @@ fn pause_flow_persist_roundtrip_keeps_paused_flag() {
     let mut gate = GateState::new(2);
     gate.record_result(true, QuizReason::Initial, 120, 1000);
     gate.begin_using("bili", 1234, 1100, false).unwrap();
-    gate.begin_timeup_paused(Level::Junior, Some("bili".into()), 1300)
+    gate.begin_timeup_paused(Level::Junior, Some("bili".into()), 1300, PauseState::Paused)
         .unwrap();
     gate.save(&path).unwrap();
 
     let loaded = GateState::load(&path).unwrap().unwrap();
     assert!(loaded.paused, "paused 标志必须持久化（防重启丢失暂停语义）");
+    assert_eq!(
+        loaded.pause_state,
+        PauseState::Paused,
+        "播放状态判定必须持久化（否则恢复播放时可能反向暂停）"
+    );
     assert_eq!(loaded.managed_pid, Some(1234));
     assert_eq!(loaded.quiz_reason, QuizReason::Timeup);
 }
@@ -145,7 +151,7 @@ fn paused_guard_step_only_repauses_during_paused_quiz() {
     gate.begin_using("bili", 111, 1100, false).unwrap();
     assert!(!commands::paused_guard_step(&gate, 111), "使用中不应触发守卫");
 
-    gate.begin_timeup_paused(Level::Primary, Some("bili".into()), 1300)
+    gate.begin_timeup_paused(Level::Primary, Some("bili".into()), 1300, PauseState::Paused)
         .unwrap();
     assert!(commands::paused_guard_step(&gate, 111), "暂停答题中应重新暂停");
     assert!(!commands::paused_guard_step(&gate, 222), "pid 不匹配不应触发");
@@ -184,7 +190,7 @@ fn fixture_pause_state() -> (tempfile::TempDir, AppState) {
 }
 
 #[test]
-fn cooldown_entry_kills_paused_target_process() {
+fn cooldown_entry_keeps_paused_target_alive() {
     let (_dir, state) = fixture_pause_state();
     let pid = spawn_sleep_pid();
     std::thread::sleep(Duration::from_millis(300));
@@ -198,7 +204,7 @@ fn cooldown_entry_kills_paused_target_process() {
         let mut gate = state.gate.lock().unwrap();
         gate.record_result(true, QuizReason::Initial, 120, 1100);
         gate.begin_using("bili", pid, 1200, false).unwrap();
-        gate.begin_timeup_paused(Level::Primary, Some("bili".into()), 1300)
+        gate.begin_timeup_paused(Level::Primary, Some("bili".into()), 1300, PauseState::Paused)
             .unwrap();
         // 重新绑定活动试卷（begin_timeup_paused 清了内存试卷，模拟超时自动开卷）
         // 直接复用 start_quiz 的开卷路径：手动放一张卷
@@ -212,7 +218,7 @@ fn cooldown_entry_kills_paused_target_process() {
         gate.set_active_paper(p);
         gate.save(&state.state_file()).unwrap();
     }
-    // 全错提交：max_retry=0 → 直接进冷却 → 加固逻辑必须真实杀掉暂停中的进程
+    // 全错提交：max_retry=0 → 直接进冷却
     let wrong: Vec<answergate_lib::model::Answer> = {
         let gate = state.gate.lock().unwrap();
         gate.active_paper()
@@ -233,6 +239,17 @@ fn cooldown_entry_kills_paused_target_process() {
     let result = result.expect("判分应成功");
     assert!(!result.passed);
     assert_eq!(state.gate.lock().unwrap().phase, GatePhase::Cooldown);
-    // 关键断言：进入冷却即关闭目标软件（防切回手动恢复播放绕过冷却）
-    assert!(!monitor::alive(pid), "进冷却后目标进程必须被关闭");
+    // v3 需求：pause 模式「只暂停，不能删除」——进冷却**不得**终止目标进程。
+    // 管控改由暂停守卫维持暂停态（孩子切回去点播放会被再次压制）。
+    assert!(
+        monitor::alive(pid),
+        "v3：pause 模式进冷却必须保留目标进程存活（不得 kill）"
+    );
+    // 冷却期间守卫仍应维持暂停
+    assert!(
+        commands::paused_guard_step(&state.gate.lock().unwrap(), pid),
+        "冷却期间暂停守卫必须继续生效"
+    );
+    // 收尾：手动清理测试进程
+    assert!(monitor::terminate(pid));
 }
