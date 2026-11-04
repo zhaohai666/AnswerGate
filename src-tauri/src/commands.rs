@@ -420,6 +420,11 @@ pub fn do_launch_target(
         gate.save(&state.state_file())?;
     }
     tracing::info!(event = "round_start", target = %target.name, pid = pid.unwrap_or(0), "纳管启动成功");
+    // 通知前端进入使用中页（后端兜底自动启动时前端定时器可能被节流，必须靠事件驱动）
+    let _ = app.emit(
+        "gate://round-started",
+        serde_json::json!({ "target_name": target.name }),
+    );
     let round_sec = round_sec_for(state, Some(&target.id));
     spawn_using_monitor(app.clone(), round_sec);
     Ok(())
@@ -835,10 +840,47 @@ pub fn submit_answers(
     answers: Vec<Answer>,
 ) -> Result<GradeResult, AppError> {
     let result = do_submit_answers(&state, &paper_id, &answers, now())?;
-    if state.gate.lock().unwrap().phase == GatePhase::Cooldown {
-        spawn_cooldown_ticker(app_handle);
+    {
+        let gate = state.gate.lock().unwrap();
+        if gate.phase == GatePhase::Cooldown {
+            spawn_cooldown_ticker(app_handle.clone());
+        }
+        // v2.1 关键修复：WKWebView 在窗口被遮挡/非活跃 Space 时会暂停 JS 定时器，
+        // 前端 3s 启动倒计时可能永不触发（真实场景实测）。Initial 通过后的
+        // 自动纳管启动改由后端兜底执行——Rust 是唯一计时权威。
+        if gate.phase == GatePhase::Passed && gate.quiz_reason == QuizReason::Initial {
+            spawn_auto_launch_after_pass(app_handle.clone());
+        }
     }
     Ok(result)
+}
+
+/// Initial 通过后的后端兜底自动启动：3 秒后若仍处于 Passed{Initial} 则纳管启动。
+/// 与前端倒计时并发安全：两边都调 do_launch_target，后到者收到 AlreadyManaged，
+/// 前端将该错误码视为成功（见 gateStore.launch）。
+pub fn spawn_auto_launch_after_pass(app: AppHandle) {
+    std::thread::spawn(move || {
+        std::thread::sleep(Duration::from_secs(3));
+        let state = app.state::<AppState>();
+        let should = {
+            let gate = state.gate.lock().unwrap();
+            gate.phase == GatePhase::Passed && gate.quiz_reason == QuizReason::Initial
+        };
+        if !should {
+            return;
+        }
+        tracing::info!(event = "auto_launch", "3s 倒计时到点（后端兜底），自动纳管启动");
+        if let Err(e) = do_launch_target(&state, &app, false, now()) {
+            // 前端已抢先启动（AlreadyManaged）属正常竞态，其余错误需要暴露
+            if !matches!(e, AppError::AlreadyManaged) {
+                tracing::error!(error = %e, event = "auto_launch_failed", "后端兜底自动启动失败");
+                let _ = app.emit(
+                    "gate://auto-launch-failed",
+                    serde_json::json!({ "message": e.to_string() }),
+                );
+            }
+        }
+    });
 }
 
 /// 解锁启动目标软件（v2：PASS 后纳管启动并进入使用中计时，应用保持常驻）。
@@ -934,4 +976,16 @@ pub fn parent_unlock(
     password: String,
 ) -> Result<(), AppError> {
     do_parent_unlock(&state, &app_handle, &password)
+}
+
+/// 前端诊断日志上报（window.onerror / unhandledrejection 等），
+/// 落入 answer_gate.log——打包应用的前端异常在终端不可见，这是唯一观测口。
+#[tauri::command]
+pub fn frontend_log(level: String, message: String) -> Result<(), AppError> {
+    match level.as_str() {
+        "error" => tracing::error!(source = "frontend", "{}", message),
+        "warn" => tracing::warn!(source = "frontend", "{}", message),
+        _ => tracing::info!(source = "frontend", "{}", message),
+    }
+    Ok(())
 }

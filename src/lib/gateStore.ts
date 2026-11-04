@@ -197,8 +197,7 @@ export async function beginQuiz(targetId: string | null): Promise<void> {
 }
 
 /** 进入冷却页（剩余秒数以 Rust 侧 get_gate_state 为准） */
-export async function gotoCooldown(): Promise<void> {
-  cameFromTimeout.set(false);
+export async function gotoCooldown(): Promise<void> {  cameFromTimeout.set(false);
   quizBanner.set(null);
   try {
     const gs = await api.getGateState();
@@ -236,7 +235,8 @@ export async function retry(): Promise<void> {
   }
 }
 
-/** 解锁启动目标软件（v2：纳管启动成功后进入使用中页） */
+/** 解锁启动目标软件（v2：纳管启动成功后进入使用中页）
+ *  v2.1：后端兜底自动启动与前端倒计时并发，后到者收到 AlreadyManaged——视为成功 */
 export async function launch(): Promise<void> {
   launchError.set(null);
   try {
@@ -246,8 +246,22 @@ export async function launch(): Promise<void> {
     quizBanner.set(null);
     await enterMonitoring();
   } catch (e) {
+    if (errCode(e) === "AlreadyManaged") {
+      launched.set(true);
+      await enterMonitoring();
+      return;
+    }
     launchError.set(errText(e));
   }
+}
+
+/** 后端兜底自动启动成功事件（v2.1）：前端定时器可能被 WKWebView 节流，靠此事件进监控页 */
+export async function handleRoundStarted(targetName: string): Promise<void> {
+  launched.set(true);
+  cameFromTimeout.set(false);
+  quizBanner.set(null);
+  await enterMonitoring();
+  void targetName;
 }
 
 /** 「继续使用」（v2：超时答题通过后续期拉起新一轮） */
@@ -260,6 +274,11 @@ export async function extendAndRelaunch(): Promise<void> {
     quizBanner.set(null);
     await enterMonitoring();
   } catch (e) {
+    if (errCode(e) === "AlreadyManaged") {
+      launched.set(true);
+      await enterMonitoring();
+      return;
+    }
     launchError.set(errText(e));
   }
 }

@@ -82,6 +82,11 @@ export const api = {
     return invoke<GateStateView>("get_gate_state");
   },
 
+  /** 前端诊断日志上报（全局错误兜底，落 answer_gate.log） */
+  frontendLog(level: "error" | "warn" | "info", message: string): Promise<void> {
+    return invoke<void>("frontend_log", { level, message }).catch(() => {});
+  },
+
   /** 家长密码应急解锁 */
   parentUnlock(password: string): Promise<void> {
     return invoke<void>("parent_unlock", { password });
@@ -140,6 +145,20 @@ export const api = {
   async onCloseRequested(cb: () => void): Promise<UnlistenFn> {
     return listen("gate://close-requested", () => {
       cb();
+    });
+  },
+
+  /** 订阅纳管启动成功（v2.1：后端兜底自动启动时前端定时器可能被节流，靠此事件进监控页） */
+  async onRoundStarted(cb: (targetName: string) => void): Promise<UnlistenFn> {
+    return listen<{ target_name: string }>("gate://round-started", (event) => {
+      cb(event.payload.target_name);
+    });
+  },
+
+  /** 订阅后端兜底自动启动失败（v2.1 诊断用） */
+  async onAutoLaunchFailed(cb: (message: string) => void): Promise<UnlistenFn> {
+    return listen<{ message: string }>("gate://auto-launch-failed", (event) => {
+      cb(event.payload.message);
     });
   },
 };

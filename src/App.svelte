@@ -15,6 +15,8 @@
     handleTimeoutReached,
     handleProcessExited,
     handleMonitorStopped,
+    handleRoundStarted,
+    gotoCooldown,
   } from "./lib/gateStore";
   import LevelSelectPage from "./pages/LevelSelectPage.svelte";
   import TargetSelectPage from "./pages/TargetSelectPage.svelte";
@@ -39,6 +41,17 @@
       ]);
     } catch (e) {
       console.error("事件订阅失败", e);
+      void api.frontendLog("error", `事件订阅失败: ${String(e)}`);
+    }
+    // v2.1 附加通道：后端兜底自动启动 / 冷却结束（各自独立订阅，失败不相互影响）
+    try {
+      unlisteners.push(await api.onRoundStarted((name) => void handleRoundStarted(name)));
+      unlisteners.push(
+        await api.onAutoLaunchFailed((msg) => exitNotice.set(`自动启动失败：${msg}`)),
+      );
+      unlisteners.push(await api.onCooldownFinished(() => void gotoCooldown()));
+    } catch (e) {
+      void api.frontendLog("warn", `附加事件订阅失败: ${String(e)}`);
     }
   });
 

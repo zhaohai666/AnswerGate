@@ -65,6 +65,7 @@ pub fn run() {
             commands::get_active_paper,
             commands::get_gate_state,
             commands::parent_unlock,
+            commands::frontend_log,
         ]);
 
     // 桌面端：单实例锁（C12，二次启动聚焦已有窗口）
