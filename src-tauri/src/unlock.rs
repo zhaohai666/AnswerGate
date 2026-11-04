@@ -146,7 +146,8 @@ pub fn pid_of_app(app_path: &str) -> Option<i32> {
         .file_stem()
         .map(|s| s.to_string_lossy().to_string())
         .unwrap_or_else(|| app_path.to_string());
-    for _ in 0..25 {
+    // v2.1：探测窗口 5s→10s（B 站等重型应用冷启动慢，5s 内可能尚未注册到 AppleScript）
+    for _ in 0..50 {
         if let Some(pid) = pid_via_osascript(&app_name).or_else(|| pid_via_pgrep(app_path)) {
             // v2.1 加固：候选必须通过主进程校验 + 600ms 稳定性复核
             // （防取到 Helper/瞬时进程——会随后退出被误判「进程意外退出」而放弃整轮纳管）
@@ -173,7 +174,7 @@ pub fn pid_of_app(app_path: &str) -> Option<i32> {
         target = %app_path,
         event = "monitor",
         result = "pid_timeout",
-        "5s 窗口内未取得 PID，放弃纳管（宁不管控不误杀）"
+        "10s 窗口内未取得 PID，放弃纳管（宁不管控不误杀）"
     );
     None
 }
