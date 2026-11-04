@@ -11,6 +11,8 @@
 
 use crate::error::AppError;
 use crate::model::TargetApp;
+#[cfg(target_os = "macos")]
+use crate::monitor::alive;
 use tauri::AppHandle;
 
 /// 启动目标软件统一入口。
@@ -146,14 +148,24 @@ pub fn pid_of_app(app_path: &str) -> Option<i32> {
         .unwrap_or_else(|| app_path.to_string());
     for _ in 0..25 {
         if let Some(pid) = pid_via_osascript(&app_name).or_else(|| pid_via_pgrep(app_path)) {
-            tracing::info!(
-                pid,
-                target = %app_path,
-                event = "monitor",
-                result = "pid_acquired",
-                "已取得目标进程句柄"
-            );
-            return Some(pid);
+            // v2.1 加固：候选必须通过主进程校验 + 600ms 稳定性复核
+            // （防取到 Helper/瞬时进程——会随后退出被误判「进程意外退出」而放弃整轮纳管）
+            if !is_main_app_process(pid, app_path) {
+                std::thread::sleep(std::time::Duration::from_millis(200));
+                continue;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(600));
+            if alive(pid) && is_main_app_process(pid, app_path) {
+                tracing::info!(
+                    pid,
+                    target = %app_path,
+                    event = "monitor",
+                    result = "pid_acquired",
+                    "已取得目标主进程句柄（含稳定性复核）"
+                );
+                return Some(pid);
+            }
+            tracing::warn!(pid, event = "monitor", result = "pid_unstable", "候选 pid 稳定性复核失败，继续探测");
         }
         std::thread::sleep(std::time::Duration::from_millis(200));
     }
@@ -181,7 +193,9 @@ fn pid_via_osascript(app_name: &str) -> Option<i32> {
     String::from_utf8_lossy(&out.stdout).trim().parse::<i32>().ok()
 }
 
-/// pgrep 兜底：`pgrep -f <完整 app 路径>`（多匹配取首个）。
+/// pgrep 兜底：`pgrep -f <完整 app 路径>`，候选逐一做主进程校验
+/// （Electron/多进程应用的 Helper 子进程命令行同样包含 app 路径，
+/// 误取 Helper 的 pid 会在其退出后被误判「进程意外退出」——v2.1 实测 bug）。
 #[cfg(target_os = "macos")]
 fn pid_via_pgrep(app_path: &str) -> Option<i32> {
     let out = std::process::Command::new("pgrep")
@@ -195,8 +209,31 @@ fn pid_via_pgrep(app_path: &str) -> Option<i32> {
     let stdout = String::from_utf8_lossy(&out.stdout);
     stdout
         .lines()
-        .next()
-        .and_then(|line| line.trim().parse::<i32>().ok())
+        .filter_map(|line| line.trim().parse::<i32>().ok())
+        .find(|pid| is_main_app_process(*pid, app_path))
+}
+
+/// 校验 pid 是否为 app 的主进程：命令行必须是
+/// `<app_path>/Contents/MacOS/<可执行名>` 且不含 "Helper"。
+#[cfg(target_os = "macos")]
+fn is_main_app_process(pid: i32, app_path: &str) -> bool {
+    let out = match std::process::Command::new("ps")
+        .args(["-p", &pid.to_string(), "-o", "command="])
+        .output()
+    {
+        Ok(o) if o.status.success() => o,
+        _ => return false,
+    };
+    let cmdline = String::from_utf8_lossy(&out.stdout).trim().to_string();
+    let expected_suffix = format!("Contents/MacOS/");
+    let is_main = cmdline.starts_with(app_path)
+        && cmdline.contains(&expected_suffix)
+        && !cmdline.contains("Helper")
+        && !cmdline.contains("helper");
+    if !is_main {
+        tracing::debug!(pid, cmdline = %cmdline, "pgrep 候选非主进程，跳过");
+    }
+    is_main
 }
 
 /// Windows：spawn exe（路径转义由 Command 参数传递天然处理）。
