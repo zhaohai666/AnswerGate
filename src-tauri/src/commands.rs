@@ -322,17 +322,20 @@ pub fn do_launch_target(
     force: bool,
     now_ts: i64,
 ) -> Result<(), AppError> {
-    {
+    tracing::info!(force, event = "launch_target_call", "收到启动目标软件请求");
+    let phase_check = {
         let gate = state.gate.lock().unwrap();
         if gate.phase == GatePhase::Using {
-            return Err(AppError::AlreadyManaged);
-        }
-        if !force && gate.phase != GatePhase::Passed {
-            return Err(AppError::InvalidInput(
+            Err(AppError::AlreadyManaged)
+        } else if !force && gate.phase != GatePhase::Passed {
+            Err(AppError::InvalidInput(
                 "未通过答题校验，不能启动目标软件".to_string(),
-            ));
+            ))
+        } else {
+            Ok(())
         }
-    }
+    };
+    phase_check?;
     // v2.1 pause 模式续期：目标进程仍在（被暂停），原地恢复播放而非重新拉起。
     // 条件：pause 模式 + Passed{Timeup} + paused 标志 + 有纳管句柄；
     // 进程已死（中途被手动退出等）则清纳管字段，落回正常 launch 流程。
@@ -376,27 +379,40 @@ pub fn do_launch_target(
         let targets = &state.config.target_apps;
         let selected = state.gate.lock().unwrap().selected_target_id.clone();
         match selected.as_deref() {
-            Some(id) => targets
-                .iter()
-                .find(|t| t.id == id)
-                .cloned()
-                .ok_or_else(|| AppError::TargetNotFound(id.to_string()))?,
+            Some(id) => match targets.iter().find(|t| t.id == id) {
+                Some(t) => t.clone(),
+                None => {
+                    tracing::error!(target_id = %id, event = "launch_failed", "选中的目标软件不在白名单");
+                    return Err(AppError::TargetNotFound(id.to_string()));
+                }
+            },
             None => {
                 let available: Vec<&TargetApp> =
                     targets.iter().filter(|t| t.launch_spec().is_some()).collect();
                 match available.len() {
                     1 => available[0].clone(),
                     _ => {
+                        tracing::error!(
+                            available = available.len(),
+                            event = "launch_failed",
+                            "未选择目标软件，且当前平台可用目标不是唯一"
+                        );
                         return Err(AppError::TargetNotFound(
                             "未选择目标软件，且当前平台可用目标不是唯一".to_string(),
-                        ))
+                        ));
                     }
                 }
             }
         }
     };
     // 启动 + 取句柄（Err = 启动本身失败，状态不变）
-    let pid = unlock::launch_target_handle(&target, app)?;
+    let pid = match unlock::launch_target_handle(&target, app) {
+        Ok(pid) => pid,
+        Err(e) => {
+            tracing::error!(target = %target.name, error = %e, event = "launch_failed", "目标软件启动失败");
+            return Err(e);
+        }
+    };
     let max_rounds = state.config.monitor.max_rounds;
     {
         let mut gate = state.gate.lock().unwrap();

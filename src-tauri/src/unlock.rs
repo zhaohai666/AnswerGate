@@ -95,14 +95,24 @@ fn platform_launch_handle(_spec: &str, _app: &AppHandle) -> Result<Option<i32>, 
 #[cfg(target_os = "macos")]
 pub fn launch_macos(app_path: &str) -> Result<(), AppError> {
     if !std::path::Path::new(app_path).exists() {
+        tracing::error!(app_path, event = "unlock_error", "目标 App 路径不存在");
         return Err(AppError::Unlock(format!("目标 App 不存在：{}", app_path)));
     }
     let status = std::process::Command::new("open")
         .arg("-a")
         .arg(app_path)
         .status()
-        .map_err(|e| AppError::Unlock(format!("open -a 启动失败：{}", e)))?;
+        .map_err(|e| {
+            tracing::error!(app_path, error = %e, event = "unlock_error", "open 进程启动失败");
+            AppError::Unlock(format!("open -a 启动失败：{}", e))
+        })?;
     if !status.success() {
+        tracing::error!(
+            app_path,
+            code = status.code(),
+            event = "unlock_error",
+            "open -a 返回非零状态"
+        );
         return Err(AppError::Unlock(format!(
             "open -a 返回非零状态（{}）：请检查路径与权限",
             status
